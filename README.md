@@ -1,10 +1,7 @@
 # MLpFEM - towards Machine Learning based parameter calibration for Finite Element Modelling
 
-This repository contains code for the collaborative project between [NGI](https://www.ngi.no/eng) and the Graz University of Technology
+This repository contains code for the research project between [NGI](https://www.ngi.no/eng) and the Graz University of Technology
 [Institute of Soil Mechanics, Foundation Engineering and Computational Geotechnics](https://www.tugraz.at/en/institutes/ibg/home) to explore the possibility to automatically calibrate parameters for constitutive models for geotechnical Finite Element Modelling with Machine Learning Algorithms.
-
-
-The repository is currently under development.
 
 ## Folder structure
 
