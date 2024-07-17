@@ -8,6 +8,7 @@ path = r'D:\MLpFEM_Database\\'
 path = r'D:\_MLpFEM_Database\__endfiles\_Database\\'
 path = r'C:\Users\haris\Documents\GitHub\MLpFEM\data\_database_Hostun\\'
 path = r'C:\Users\haris\Documents\GitHub\MLpFEM\data\_database_psi_200kPa\\'
+path = r'C:\Users\haris\Documents\GitHub\MLpFEM\data\_database_20240715\\'
 
 
 # List all NPY files in the specified path
@@ -33,5 +34,5 @@ for file in sorted_files:
     tot_data_npy = pd.concat([tot_data_npy, df], ignore_index=True)
 
 # Save NPY data to an NPY file
-npy_export_file_path = path + r'\HardeningSoil_Database_psi_0.npy'
+npy_export_file_path = path + r'\HardeningSoil_Database_20240715.npy'
 np.save(npy_export_file_path, tot_data_npy.to_numpy())

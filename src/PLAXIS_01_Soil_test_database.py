@@ -60,7 +60,7 @@ def triaxial_and_oed(E50ref, phi, powerm, nu, Rf, K0NC, dilatancy, CellPressure,
     # Running an Oedometer test
     try:
         g_t.Oedometer.PhaseTable[0].Siginc = -400
-        g_t.Oedometer.PhaseTable[0].Steps = 374
+        g_t.Oedometer.PhaseTable[0].Steps = 375
 
         g_t.Oedometer.addphase()
         g_t.Oedometer.PhaseTable[1].Siginc = 350
