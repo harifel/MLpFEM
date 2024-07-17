@@ -181,7 +181,7 @@ file_true = path_real + r"\01_rawdata_cropped\\" + file_names_real[2]
 
 x_syn, y_pred = interpolate_and_plot(axs[1, 0], file_true, "$p'$ (kPa)", '$q$ (kPa)',
                                       (0, 1000), (0, -600), invert_x=True, degree=10,
-                                      x_multi = -1, y_multi = 1, x_syn = y_pred_q, interp_change = False, num = 251)
+                                      x_multi = -1, y_multi = 1, x_syn = y_pred_q, interp_change = False, num = 250)
 
 # x_syn, y_pred = interpolate_and_plot(axs[1, 0], file_true, "$p'$ (kPa)", '$q$ (kPa)',
 #                                      (0, 1000), (0, -900), invert_x=True, degree=5,
