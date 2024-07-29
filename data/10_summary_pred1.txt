@@ -1,0 +1,11 @@
+E50ref: 	 20541
+Eoedref: 	 21000
+Eurref: 	 82024
+phi: 	 37
+cref: 	 0.000
+psi: 	 9
+m: 	 0.5
+nu: 	 0.2
+Rf: 	 0.9
+K0NC: 	 0.3982
+CellPressure: 	 200.000

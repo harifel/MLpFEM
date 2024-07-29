@@ -167,5 +167,5 @@ np.savetxt(path_real + rf".\10_ML_Input\{file_names_real[-1]}", interpolated_dat
 
 
 plt.legend(loc='upper center', bbox_to_anchor=(-.25, -.38), frameon=False, ncol=3)
-plt.subplots_adjust(left=0.1, right=0.97, bottom=0.22, top=0.98, wspace=0.40, hspace=0.5)
-plt.savefig("Synthetictest_interpolation.png", dpi=500)
+plt.subplots_adjust(left=0.15, right=0.95, bottom=0.22, top=0.98, wspace=0.40, hspace=0.5)
+plt.savefig("../graphics/" + "Synthetictest_interpolation.png", dpi=500)
