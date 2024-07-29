@@ -9,7 +9,7 @@ from ML_Modelevaluation import SoilModel, HSdata_process
 SMALL_SIZE = 11
 BIGGER_SIZE = 11
 
-plt.rc('font', family='Times New Roman')
+plt.rc('font', family='Arial')
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=SMALL_SIZE)     # fontsize of the axes title
 plt.rc('axes', labelsize=SMALL_SIZE)    # fontsize of the x and y labels
@@ -146,7 +146,6 @@ def plot_oedometer_test(ax, file_true, xlabel, ylabel, ylim, xlim, x_multi, y_mu
 
 
 folder = r'01_analysis_RealTest_Karlsruhe_200kPa'
-#folder = r'02_analysis_RealTest_Karlsruhe_100kPa'
 path_real = rf'C:\Users\haris\Documents\GitHub\MLpFEM\data\{folder}\\'
 
 # Plot 1: Triaxial Test - Deviatoric Stress and Eps1
@@ -154,9 +153,7 @@ file_true = path_real + r"\01_rawdata_cropped\\" + file_names_real[0]
 x_syn, y_pred_q = interpolate_and_plot(axs[0, 0], file_true, '$\epsilon_{1}$(-)', 'q (kPa)',
                                       (0, 1000), (0, -0.30), invert_x=True,
                                       x_multi = 1 / 100 * (-1))
-# x_syn, y_pred_q = interpolate_and_plot(axs[0, 0], file_true, '$\epsilon_{1}$(-)', 'q (kPa)',
-#                                      (0, 1000), (0, -0.30), invert_x=True,degree=10,
-#                                      x_multi = (-1))
+
 # Save the interpolated data
 np.savetxt(path_real + rf".\02_rawdata_interpolated\{file_names_real[0]}", np.column_stack((x_syn, y_pred_q)), delimiter='\t')
 
@@ -169,9 +166,6 @@ x_syn, y_pred = interpolate_and_plot(axs[0, 1], file_true, '$\epsilon_{1}$(-)', 
                                       (-0.05, 0.10), (0, -0.30), invert_x=True, degree=10,
                                       x_multi = 1/100*(-1), y_multi = (-1)/100)
 
-# x_syn, y_pred = interpolate_and_plot(axs[0, 1], file_true, '$\epsilon_{1}$(-)', '$\epsilon_{vol}$ (-)',
-#                                      (-0.05, 0.10), (0, -0.30), invert_x=True, degree=10,
-#                                      x_multi = (-1), y_multi = -1)
 # Save the interpolated data
 np.savetxt(path_real + rf".\02_rawdata_interpolated\{file_names_real[1]}", np.column_stack((x_syn, y_pred)), delimiter='\t')
 
@@ -183,9 +177,6 @@ x_syn, y_pred = interpolate_and_plot(axs[1, 0], file_true, "$p'$ (kPa)", '$q$ (k
                                       (0, 1000), (0, -600), invert_x=True, degree=10,
                                       x_multi = -1, y_multi = 1, x_syn = y_pred_q, interp_change = False, num = 250)
 
-# x_syn, y_pred = interpolate_and_plot(axs[1, 0], file_true, "$p'$ (kPa)", '$q$ (kPa)',
-#                                      (0, 1000), (0, -900), invert_x=True, degree=5,
-#                                      x_multi = -1, y_multi = 1, x_syn = y_pred_q, interp_change = False)
 # Save the interpolated data
 np.savetxt(path_real + rf".\02_rawdata_interpolated\{file_names_real[2]}", np.column_stack((y_pred, x_syn)), delimiter='\t')
 
@@ -196,13 +187,10 @@ file_true = path_real + r"\01_rawdata_cropped\\" + file_names_real[-1]
 interpolated_data = plot_oedometer_test(axs[1, 1], file_true, xlabel = '$\epsilon_{1}$(-)', ylabel = "$\sigma_{1}'$ (kPa)",
                     ylim = (0, -500), xlim = (0, -0.030),
                     x_multi = -1, y_multi = (-1) / 100)
-# interpolated_data = plot_oedometer_test(axs[1, 1], file_true, xlabel = '$\epsilon_{1}$(-)', ylabel = "$\sigma_{1}'$ (kPa)",
-#                     ylim = (0, -300), xlim = (0, -0.030),
-#                     x_multi = -1, y_multi = (-1))
 
 np.savetxt(path_real + rf".\02_rawdata_interpolated\{file_names_real[-1]}", interpolated_data, delimiter='\t')
 
 
 plt.legend(loc='upper center', bbox_to_anchor=(-.25, -.38), frameon=False, ncol=3)
-plt.subplots_adjust(left=0.12, right=0.97, bottom=0.22, top=0.98, wspace=0.40, hspace=0.5)
-plt.savefig(f"RealTest_interpolation_{folder}.png", dpi=500)
+plt.subplots_adjust(left=0.15, right=0.95, bottom=0.22, top=0.98, wspace=0.40, hspace=0.5)
+plt.savefig("../graphics/" + f"RealTest_interpolation_{folder}.png", dpi=500)
