@@ -155,19 +155,19 @@ HS_mat.K0NC = 0.5
 g_i.soiltest(HS_mat)
 
 #x = pd.read_csv(r'C:\Users\haris\Documents\GitHub\MLpFEM\data\pred_analysis_realTest_01_analysis_RealTest_Karlsruhe_200kPa.txt', delimiter='\t', header=None)
-x = pd.read_csv(r'C:\Users\haris\Documents\GitHub\MLpFEM\data\pred_analysis_synthetictest_102_SyntheticExample_Final.txt', delimiter='\t', header=None)
-#x = pd.read_csv(r'C:\Users\haris\Documents\GitHub\MLpFEM\data\pred_analysis_realTest_01_analysis_RealTest_Karlsruhe_200kPa_EPD.txt', delimiter='\t', header=None)
+# x = pd.read_csv(r'C:\Users\haris\Documents\GitHub\MLpFEM\data\pred_analysis_synthetictest_102_SyntheticExample_Final.txt', delimiter='\t', header=None)
+x = pd.read_csv(r'C:\Users\haris\Documents\GitHub\MLpFEM\data\pred_analysis_realTest_01_analysis_RealTest_Karlsruhe_200kPa_EPD.txt', delimiter='\t', header=None)
 
 #path = r'..\\data\01_analysis_RealTest_Karlsruhe_200kPa\10_MachineLearning\\'
-path = r'..\\data\\102_SyntheticExample_Final\10_MachineLearning\\'
-#path = r'..\\data\01_analysis_RealTest_Karlsruhe_200kPa\12_EPD\\'
+# path = r'..\\data\\102_SyntheticExample_Final\10_MachineLearning\\'
+path = r'..\\data\01_analysis_RealTest_Karlsruhe_200kPa\12_EPD\\'
 
 triaxial_and_oed(x.iloc[0,1], x.iloc[1,1], x.iloc[2,1], x.iloc[3,1],
                         x.iloc[4,1], x.iloc[5,1], x.iloc[6,1], x.iloc[7,1],
-                        x.iloc[8,1], x.iloc[9,1], x.iloc[10,1], path=path)
+                        x.iloc[8,1], x.iloc[9,1], 200, path=path)
 
 
-# for i in range(5):
+# for i in range(6):
 #     list_exe = rf'..\data\10_summary_pred{i+1}.txt'
 #     x = pd.read_csv(list_exe, delimiter='\t', header=None)
 #     path = rf'..\\data\10_EBO\{i+1}_Pred{i+1}\\'
