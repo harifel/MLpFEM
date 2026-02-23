@@ -4,7 +4,7 @@ This repository contains code for the research project between [NGI](https://www
 [Institute of Soil Mechanics, Foundation Engineering and Computational Geotechnics](https://www.tugraz.at/en/institutes/ibg/home) to explore the possibility to automatically calibrate parameters for constitutive models for geotechnical Finite Element Modelling with Machine Learning Algorithms.
 
 
-The related contribution can be found here: [Accelerated identification of hardening soil model parameters employing tree-based machine learning algorithms](https://www.researchgate.net/publication/400393986_Automated_parameter_determination_From_in-situ_measurements_to_constitutive_models) - DOI: [https://doi.org/10.1007/s11440-026-02951-5](https://doi.org/10.1007/s11440-026-02951-5)
+The related contribution can be found here: [Accelerated identification of hardening soil model parameters employing tree-based machine learning algorithms](https://www.researchgate.net/profile/Haris-Felic-2?ev=hdr_xprf](https://www.researchgate.net/profile/Haris-Felic-2?ev=hdr_xprf)) - DOI: [https://doi.org/10.1007/s11440-026-02951-5](https://doi.org/10.1007/s11440-026-02951-5)
 
 ## Folder structure
 
