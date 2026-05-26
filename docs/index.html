@@ -603,6 +603,26 @@ function setChartStat(id,text){
   const el=document.getElementById('stat-'+id); if(el) el.textContent=text;
 }
 
+function interpLinear(xArr, yArr, x){
+  const n=xArr.length;
+  if(n===0) return NaN;
+  if(x<=xArr[0]) return yArr[0];
+  if(x>=xArr[n-1]) return yArr[n-1];
+  for(let i=1;i<n;i++){
+    const x0=xArr[i-1], x1=xArr[i];
+    if((x>=x0&&x<=x1)||(x<=x0&&x>=x1)){
+      const t=(x-x0)/(x1-x0);
+      return yArr[i-1] + t*(yArr[i]-yArr[i-1]);
+    }
+  }
+  return yArr[n-1];
+}
+
+function statsFromCurve(rawX, rawY, curveX, curveY){
+  const pred = rawX.map(x=>interpLinear(curveX, curveY, x));
+  return r2rmse(rawY, pred);
+}
+
 // ── Browser-side polynomial interpolation ────────────────────────────────────
 // Plain OLS (no regularisation) — matches ML_Modelevaluation.py exactly.
 function polyFit(xArr, yArr, xNew, degree) {
@@ -673,10 +693,14 @@ async function runBrowserInterpolation() {
       o: data.curves.oedo
     };
 
-    setChartStat('q', `backend interpolation (deg=${dq})`);
-    setChartStat('v', `backend interpolation (deg=${dv})`);
-    setChartStat('o', `backend interpolation (deg=${doo})`);
-    setChartStat('p', "backend interpolation (display p′ positive)");
+	const sq = statsFromCurve(rawData.q.x, rawData.q.y, userInterp.q.x, userInterp.q.y);
+	const sv = statsFromCurve(rawData.v.x, rawData.v.y, userInterp.v.x, userInterp.v.y);
+	const so = statsFromCurve(rawData.o.y, rawData.o.x, userInterp.o.x, userInterp.o.y);
+
+	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
+	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
+	setChartStat('o', `R²=${so.r2.toFixed(4)}  RMSE=${so.rmse.toFixed(1)} kPa  (deg=${doo})`);
+	setChartStat('p', "backend interpolation (display p′ positive)");
 
     if(view==='raw') setView('int',document.querySelectorAll('.cvb')[1]);
     else drawAll();
