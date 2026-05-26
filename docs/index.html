@@ -500,8 +500,11 @@ function initCharts(){
   C.v = mkC('ch-v','ε₁ (–)','εᵥ (–)',    true,  false);
   C.o = mkC('ch-o','ε₁ (–)',"σ₁' (kPa)", true,  true);
   C.p = mkC('ch-p',"p' (kPa)",'q (kPa)', false, false);
-  // Defer so the CSS grid has time to size the canvases
-  requestAnimationFrame(()=>{ drawAll(); setDefaultStats(); });
+  // Double rAF: first frame shows the grid, second frame charts have real pixel size
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    drawAll();
+    setDefaultStats();
+  }));
 }
 
 // Draw order in Chart.js: LOWER order number = drawn ON TOP (rendered last)
@@ -523,36 +526,29 @@ function mkDS(color,x,y,ptRad,dashed,ord){
 function drawAll(){
   if(!chartsReady)return;
   const showInt=view==='int'||view==='sim';
-  const showSim=view==='sim';
+  const showSim=view==='sim' && userSim!=null;  // only show sim if explicitly set
 
   const rq=rawData.q||D.raw.q, rv=rawData.v||D.raw.v;
   const rp=rawData.p||D.raw.p, ro=rawData.o||D.raw.o;
   const iq=userInterp?.q||D.int.q, iv=userInterp?.v||D.int.v;
   const ip=userInterp?.p||D.int.p, io=userInterp?.o||D.int.o;
-  // Only show ML simulation if it was explicitly computed (Identify + PLAXIS upload)
-  const sq=userSim?.q, sv=userSim?.v;
-  const sp=userSim?.p, so=userSim?.o;
 
-  function build(rx,ry,ix,iy,sx,sy){
+  function build(rx,ry,ix,iy,simX,simY){
     const s=[];
-    // Raw behind everything: order 3
     s.push(mkDS('#c8c5c0',rx,ry,2,false,3));
-    // Interpolated above raw: order 2
     if(showInt) s.push(mkDS('#1a1a1a',ix,iy,0,false,2));
-    // ML sim on top — only if data exists
-    if(showSim && sx && sy) s.push(mkDS('#3b5bdb',sx,sy,0,true,1));
+    if(showSim && simX && simY) s.push(mkDS('#3b5bdb',simX,simY,0,true,1));
     return s;
   }
 
-  C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,sq.x,sq.y); C.q.update('none');
-  C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,sv.x,sv.y); C.v.update('none');
-  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,sp.x,sp.y); C.p.update('none');
-  // oedo raw: stored x=sigma, y=eps → swap for plot x=eps, y=sigma
+  C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,userSim?.q?.x,userSim?.q?.y); C.q.update('none');
+  C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,userSim?.v?.x,userSim?.v?.y); C.v.update('none');
+  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,userSim?.p?.x,userSim?.p?.y); C.p.update('none');
   {
     const s=[];
     s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
     if(showInt) s.push(mkDS('#1a1a1a',io.x,io.y,0,false,2));
-    if(showSim && so) s.push(mkDS('#3b5bdb',so.x,so.y,0,true,1));
+    if(showSim && userSim?.o) s.push(mkDS('#3b5bdb',userSim.o.x,userSim.o.y,0,true,1));
     C.o.data.datasets=s; C.o.update('none');
   }
 
@@ -571,29 +567,27 @@ function setView(v,btn){
 
 // ── Default stats from D.int ─────────────────────────────────────────────────
 function setDefaultStats(){
-  if(!rawData.q||!rawData.v||!rawData.o) return;
-  const {q:dq,v:dv,o:doo}=getDegrees();
-  // Evaluate at raw data points
-  function statAt(rawX, intX, intY, key, unit){
-    // Interpolate D.int at raw x positions by nearest index
-    // simpler: just use evalStats on rawData with current degrees
-  }
-  const sqS=evalStats(rawData.q.x,rawData.q.y,dq);
-  setChartStat('q',`R²=${sqS.r2.toFixed(4)}  RMSE=${sqS.rmse.toFixed(1)} kPa  (deg=${dq})`);
-  const svS=evalStats(rawData.v.x,rawData.v.y,dv);
-  setChartStat('v',`R²=${svS.r2.toFixed(4)}  RMSE=${svS.rmse.toFixed(5)}  (deg=${dv})`);
-  setChartStat('p','linspace only (no fit)');
-  // Oedo stats from D.int curves vs raw
-  const sigArr=rawData.o.x, epsArr=rawData.o.y;
-  const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
-  const sigL=sigArr.slice(0,minSigIdx+1), epsL=epsArr.slice(0,minSigIdx+1);
-  let sigU=sigArr.slice(minSigIdx), epsU=epsArr.slice(minSigIdx);
-  const ci=sigU.findIndex(s=>s>-50);
-  if(ci>0){sigU=sigU.slice(0,ci);epsU=epsU.slice(0,ci);}
-  const st1=r2rmse(sigL,polyFit(epsL,sigL,epsL,doo));
-  const st2=r2rmse(sigU,polyFit(epsU,sigU,epsU,doo));
-  const r2o=(st1.r2+st2.r2)/2, rmseo=(st1.rmse+st2.rmse)/2;
-  setChartStat('o',`R²=${r2o.toFixed(4)}  RMSE=${rmseo.toFixed(1)} kPa  (deg=${doo})`);
+  try {
+    if(!rawData.q||!rawData.v) return;
+    const {q:dq,v:dv,o:doo}=getDegrees();
+    const sqS=evalStats(rawData.q.x,rawData.q.y,dq);
+    setChartStat('q',`R²=${sqS.r2.toFixed(4)}  RMSE=${sqS.rmse.toFixed(1)} kPa  (deg=${dq})`);
+    const svS=evalStats(rawData.v.x,rawData.v.y,dv);
+    setChartStat('v',`R²=${svS.r2.toFixed(4)}  RMSE=${svS.rmse.toFixed(5)}  (deg=${dv})`);
+    setChartStat('p','linspace only (no fit)');
+    if(rawData.o){
+      // oedo: x=sigma(neg kPa), y=eps(neg decimal)
+      const sigArr=rawData.o.x, epsArr=rawData.o.y;
+      const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
+      const sigL=sigArr.slice(0,minSigIdx+1), epsL=epsArr.slice(0,minSigIdx+1);
+      let sigU=sigArr.slice(minSigIdx), epsU=epsArr.slice(minSigIdx);
+      const ci=sigU.findIndex(s=>s>-50); if(ci>0){sigU=sigU.slice(0,ci);epsU=epsU.slice(0,ci);}
+      const st1=r2rmse(sigL,polyFit(epsL,sigL,epsL,doo));
+      const st2=r2rmse(sigU,polyFit(epsU,sigU,epsU,doo));
+      const r2o=(st1.r2+st2.r2)/2, rmseo=(st1.rmse+st2.rmse)/2;
+      setChartStat('o',`R²=${r2o.toFixed(4)}  RMSE=${rmseo.toFixed(1)} kPa  (deg=${doo})`);
+    }
+  } catch(e){ console.warn('setDefaultStats:', e.message); }
 }
 
 // ── Stats helpers ─────────────────────────────────────────────────────────────
