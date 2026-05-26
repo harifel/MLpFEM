@@ -659,7 +659,7 @@ function runBrowserInterpolation() {
   const qArr=(rawData.p&&rawData.p.y.length)?rawData.p.y:D.raw.p.y;
   const maxP=Math.max(...pArr),minP=Math.min(...pArr);
   const minQ=Math.min(...qArr),maxQ=Math.max(...qArr);
-  const p_pred=Array.from({length:250},(_,i)=>maxP+i*(minP-maxP)/249);
+  const p_pred=Array.from({length:250},(_,i)=>minP+i*(maxP-minP)/249);
   const q_syn =Array.from({length:250},(_,i)=>minQ+i*(maxQ-minQ)/249);
   setChartStat('p','linspace only (no fit)');
 
@@ -692,6 +692,7 @@ function runBrowserInterpolation() {
 
 function onAnyDegreeChange(){
   getDegrees(); // update numeric labels only — NO chart change
+  runBrowserInterpolation(); // recompute curves + stats immediately
   // Changing degree does NOT update the chart.
   // Click "Identify parameters" to run the API with the new degrees.
   setStatus('info',
@@ -727,6 +728,7 @@ function gotFile(k,inp){
 function cpChanged(){
   document.getElementById('mnote').style.display=
     document.getElementById('cp').value!=='200'?'block':'none';
+  runBrowserInterpolation();
 }
 
 // ── Run ───────────────────────────────────────────────────────────────────────
