@@ -461,7 +461,7 @@ function loadKFSRawData(){
   userInterp = {
     q: {x:[...D.int.q.x], y:[...D.int.q.y]},
     v: {x:[...D.int.v.x], y:[...D.int.v.y]},
-    p: {x:[...D.int.p.x], y:[...D.int.p.y]},
+    p: {x:D.int.p.x.map(v => -v), y:[...D.int.p.y]},
     o: {x:[...D.int.o.x], y:[...D.int.o.y]},
   };
   const labels={q:'KFS_q_eps1.txt',v:'KFS_epsvol.txt',p:'KFS_path.txt',o:'KFS_Oedometer.txt'};
@@ -639,57 +639,53 @@ function getDegrees(){
   return {q,v,o};
 }
 
-function runBrowserInterpolation() {
-  if(!rawData.q||!rawData.v||!rawData.o) return;
-  const {q:dq,v:dv,o:doo}=getDegrees();
-  const x_syn=Array.from({length:250},(_,i)=>0+i*(-0.25)/249);
+async function runBrowserInterpolation() {
+  const hasUploaded = files.q && files.v && files.p && files.o;
+  const hasRaw = rawData.q && rawData.v && rawData.p && rawData.o;
+  if(!hasUploaded && !hasRaw) return;
 
-  // q–ε₁
-  const qI=polyFit(rawData.q.x,rawData.q.y,x_syn,dq);
-  const sqS=evalStats(rawData.q.x,rawData.q.y,dq);
-  setChartStat('q',`R²=${sqS.r2.toFixed(4)}  RMSE=${sqS.rmse.toFixed(1)} kPa  (deg=${dq})`);
+  try{
+    const form = new FormData();
+    const src = (key, uploaded) => uploaded || rawDataToBlob(key);
 
-  // εvol–ε₁
-  const evI=polyFit(rawData.v.x,rawData.v.y,x_syn,dv);
-  const svS=evalStats(rawData.v.x,rawData.v.y,dv);
-  setChartStat('v',`R²=${svS.r2.toFixed(4)}  RMSE=${svS.rmse.toFixed(5)}  (deg=${dv})`);
+    form.append('q_eps1_file', src('q', files.q), 'q.txt');
+    form.append('epsvol_file', src('v', files.v), 'v.txt');
+    form.append('path_file',   src('p', files.p), 'p.txt');
+    form.append('oedo_file',   src('o', files.o), 'o.txt');
 
-  // Stress path: linspace only, no polynomial
-  const pArr=(rawData.p&&rawData.p.x.length)?rawData.p.x:D.raw.p.x;
-  const qArr=(rawData.p&&rawData.p.y.length)?rawData.p.y:D.raw.p.y;
-  const maxP=Math.max(...pArr),minP=Math.min(...pArr);
-  const minQ=Math.min(...qArr),maxQ=Math.max(...qArr);
-  const p_pred=Array.from({length:250},(_,i)=>minP+i*(maxP-minP)/249);
-  const q_syn =Array.from({length:250},(_,i)=>minQ+i*(maxQ-minQ)/249);
-  setChartStat('p','linspace only (no fit)');
+    const {q:dq,v:dv,o:doo}=getDegrees();
+    form.append('poly_degree_q', dq);
+    form.append('poly_degree_v', dv);
+    form.append('poly_degree_o', doo);
 
-  // Oedometer
-  const sigArr=rawData.o.x,epsArr=rawData.o.y;
-  const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
-  const sigL=sigArr.slice(0,minSigIdx+1),epsL=epsArr.slice(0,minSigIdx+1);
-  let sigU=sigArr.slice(minSigIdx),epsU=epsArr.slice(minSigIdx);
-  const ci=sigU.findIndex(s=>s>-50);
-  if(ci>0){sigU=sigU.slice(0,ci);epsU=epsU.slice(0,ci);}
-  const minEL=Math.min(...epsL),maxEU=Math.max(...epsU);
-  const gL=Array.from({length:375},(_,i)=>0+i*minEL/374);
-  const gU=Array.from({length:375},(_,i)=>minEL+i*(maxEU-minEL)/374);
-  const sLI=polyFit(epsL,sigL,gL,doo),sUI=polyFit(epsU,sigU,gU,doo);
-  const st1=r2rmse(sigL,polyFit(epsL,sigL,epsL,doo));
-  const st2=r2rmse(sigU,polyFit(epsU,sigU,epsU,doo));
-  const r2o=(st1.r2+st2.r2)/2,rmseo=(st1.rmse+st2.rmse)/2;
-  setChartStat('o',`R²=${r2o.toFixed(4)}  RMSE=${rmseo.toFixed(1)} kPa  (deg=${doo})`);
+    const resp = await fetch(API+'/interpolate', {method:'POST', body:form});
+    if(!resp.ok){
+      const e = await resp.json().catch(()=>({detail:'HTTP '+resp.status}));
+      throw new Error(e.detail || ('HTTP '+resp.status));
+    }
+    const data = await resp.json();
 
-  // Store as preview — does NOT overwrite userInterp (D.int stays for Identify)
-  previewInterp={
-    q:{x:x_syn,y:qI}, v:{x:x_syn,y:evI},
-    p:{x:p_pred,y:q_syn}, o:{x:[...gL,...gU],y:[...sLI,...sUI]}
-  };
-  userInterp = previewInterp; // update display
-  if(view==='raw') setView('int',document.querySelectorAll('.cvb')[1]);
-  else drawAll();
-  setStatus('info','Preview only — click Identify parameters for the exact result.');
+    // Display only: flip p′ sign to positive
+    userInterp = {
+      q: data.curves.q_eps1,
+      v: data.curves.epsvol,
+      p: { x: data.curves.path.x.map(v => -v), y: data.curves.path.y },
+      o: data.curves.oedo
+    };
+
+    setChartStat('q', `backend interpolation (deg=${dq})`);
+    setChartStat('v', `backend interpolation (deg=${dv})`);
+    setChartStat('o', `backend interpolation (deg=${doo})`);
+    setChartStat('p', "backend interpolation (display p′ positive)");
+
+    if(view==='raw') setView('int',document.querySelectorAll('.cvb')[1]);
+    else drawAll();
+
+    setStatus('info','Preview from backend interpolation (same as prediction input).');
+  }catch(e){
+    setStatus('err','Interpolation error: '+e.message);
+  }
 }
-
 function onAnyDegreeChange(){
   getDegrees(); // update numeric labels only — NO chart change
   runBrowserInterpolation(); // recompute curves + stats immediately
@@ -785,8 +781,12 @@ async function runAnalysis(){
       throw new Error(e.detail||'HTTP '+resp.status);
     }
     const data = await resp.json();
-    userInterp = {q:data.curves.q_eps1, v:data.curves.epsvol,
-                  p:data.curves.path,   o:data.curves.oedo};
+	userInterp = {
+	  q:data.curves.q_eps1,
+	  v:data.curves.epsvol,
+	  p:{ x:data.curves.path.x.map(v => -v), y:data.curves.path.y },
+	  o:data.curves.oedo
+	};
     userSim = null;
     setView('int', document.querySelectorAll('.cvb')[1]);
     showResults(data.parameters, hasUploaded
