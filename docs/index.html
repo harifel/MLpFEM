@@ -458,18 +458,14 @@ function loadKFSRawData(){
   // Set userInterp from the saved interpolated files (sklearn 1.2.2).
   // This is the EXACT same input the paper prediction used.
   // The browser OLS only replaces this when the user moves a slider.
-  userInterp = {
-    q: {x:[...D.int.q.x], y:[...D.int.q.y]},
-    v: {x:[...D.int.v.x], y:[...D.int.v.y]},
-    p: {x:D.int.p.x.map(v => -v), y:[...D.int.p.y]},
-    o: {x:[...D.int.o.x], y:[...D.int.o.y]},
-  };
+  userInterp = null;
   const labels={q:'KFS_q_eps1.txt',v:'KFS_epsvol.txt',p:'KFS_path.txt',o:'KFS_Oedometer.txt'};
   ['q','v','p','o'].forEach(k=>{
     const el=document.getElementById('un-'+k);
     el.textContent='● '+labels[k]; el.classList.add('ok');
     document.getElementById('uc-'+k).classList.add('done');
   });
+  runBrowserInterpolation();
 }
 
 // ── Charts ────────────────────────────────────────────────────────────────────
@@ -529,9 +525,21 @@ function drawAll(){
   const showSim=view==='sim' && userSim!=null;  // only show sim if explicitly set
 
   const rq=rawData.q||D.raw.q, rv=rawData.v||D.raw.v;
-  const rp=rawData.p||D.raw.p, ro=rawData.o||D.raw.o;
-  const iq=userInterp?.q||D.int.q, iv=userInterp?.v||D.int.v;
-  const ip=userInterp?.p||D.int.p, io=userInterp?.o||D.int.o;
+
+  // Always display p′ as positive (for raw + interpolated + sim)
+  const rpSrc = rawData.p || D.raw.p;
+  const rp = { x: rpSrc.x.map(v => Math.abs(v)), y: rpSrc.y };
+
+  const ro=rawData.o||D.raw.o;
+
+  // Do not force D.int as default interpolation; use raw unless backend interp is available
+  const iq=userInterp?.q || rq;
+  const iv=userInterp?.v || rv;
+  const ipRaw=userInterp?.p || rp;
+  const ip={ x: ipRaw.x.map(v => Math.abs(v)), y: ipRaw.y };
+  const io=userInterp?.o || {x:ro.y, y:ro.x};
+
+  const simPx = userSim?.p?.x ? userSim.p.x.map(v => Math.abs(v)) : null;
 
   function build(rx,ry,ix,iy,simX,simY){
     const s=[];
@@ -543,7 +551,7 @@ function drawAll(){
 
   C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,userSim?.q?.x,userSim?.q?.y); C.q.update('none');
   C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,userSim?.v?.x,userSim?.v?.y); C.v.update('none');
-  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,userSim?.p?.x,userSim?.p?.y); C.p.update('none');
+  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,simPx,userSim?.p?.y); C.p.update('none');
   {
     const s=[];
     s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
@@ -567,27 +575,7 @@ function setView(v,btn){
 
 // ── Default stats from D.int ─────────────────────────────────────────────────
 function setDefaultStats(){
-  try {
-    if(!rawData.q||!rawData.v) return;
-    const {q:dq,v:dv,o:doo}=getDegrees();
-    const sqS=evalStats(rawData.q.x,rawData.q.y,dq);
-    setChartStat('q',`R²=${sqS.r2.toFixed(4)}  RMSE=${sqS.rmse.toFixed(1)} kPa  (deg=${dq})`);
-    const svS=evalStats(rawData.v.x,rawData.v.y,dv);
-    setChartStat('v',`R²=${svS.r2.toFixed(4)}  RMSE=${svS.rmse.toFixed(5)}  (deg=${dv})`);
-    setChartStat('p','linspace only (no fit)');
-    if(rawData.o){
-      // oedo: x=sigma(neg kPa), y=eps(neg decimal)
-      const sigArr=rawData.o.x, epsArr=rawData.o.y;
-      const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
-      const sigL=sigArr.slice(0,minSigIdx+1), epsL=epsArr.slice(0,minSigIdx+1);
-      let sigU=sigArr.slice(minSigIdx), epsU=epsArr.slice(minSigIdx);
-      const ci=sigU.findIndex(s=>s>-50); if(ci>0){sigU=sigU.slice(0,ci);epsU=epsU.slice(0,ci);}
-      const st1=r2rmse(sigL,polyFit(epsL,sigL,epsL,doo));
-      const st2=r2rmse(sigU,polyFit(epsU,sigU,epsU,doo));
-      const r2o=(st1.r2+st2.r2)/2, rmseo=(st1.rmse+st2.rmse)/2;
-      setChartStat('o',`R²=${r2o.toFixed(4)}  RMSE=${rmseo.toFixed(1)} kPa  (deg=${doo})`);
-    }
-  } catch(e){ console.warn('setDefaultStats:', e.message); }
+  runBrowserInterpolation();
 }
 
 // ── Stats helpers ─────────────────────────────────────────────────────────────
@@ -701,7 +689,7 @@ async function runBrowserInterpolation() {
 	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
 	setChartStat('o', `R²=${so.r2.toFixed(4)}  RMSE=${so.rmse.toFixed(1)} kPa  (deg=${doo})`);
 	setChartStat('p', "backend interpolation (display p′ positive)");
-
+	
     if(view==='raw') setView('int',document.querySelectorAll('.cvb')[1]);
     else drawAll();
 
@@ -711,16 +699,10 @@ async function runBrowserInterpolation() {
   }
 }
 function onAnyDegreeChange(){
-  getDegrees(); // update numeric labels only — NO chart change
-  runBrowserInterpolation(); // recompute curves + stats immediately
-  // Changing degree does NOT update the chart.
-  // Click "Identify parameters" to run the API with the new degrees.
-  setStatus('info',
-    `Degrees set: q=${document.getElementById('deg_q').value}, ` +
-    `εvol=${document.getElementById('deg_v').value}, ` +
-    `oedo=${document.getElementById('deg_o').value}. ` +
-    `Click Identify parameters to apply.`);
+  getDegrees();
+  runBrowserInterpolation();
 }
+
 
 // ── Files ─────────────────────────────────────────────────────────────────────
 function gotFile(k,inp){
@@ -738,6 +720,9 @@ function gotFile(k,inp){
       if(p.length>=2){const x=parseFloat(p[0]),y=parseFloat(p[1]);if(!isNaN(x)&&!isNaN(y)){xs.push(x);ys.push(y);}}
     });
     rawData[k]={x:xs,y:ys};
+	if(rawData.q && rawData.v && rawData.p && rawData.o){
+		runBrowserInterpolation();
+		}
     if(view==='raw') drawAll();
     // Auto-run interpolation preview once all 3 triaxial files are loaded
 
@@ -811,6 +796,15 @@ async function runAnalysis(){
 	  p:{ x:data.curves.path.x.map(v => -v), y:data.curves.path.y },
 	  o:data.curves.oedo
 	};
+	const {q:dq,v:dv,o:doo}=getDegrees();
+	const sq = statsFromCurve(rawData.q.x, rawData.q.y, userInterp.q.x, userInterp.q.y);
+	const sv = statsFromCurve(rawData.v.x, rawData.v.y, userInterp.v.x, userInterp.v.y);
+	const so = statsFromCurve(rawData.o.y, rawData.o.x, userInterp.o.x, userInterp.o.y);
+
+	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
+	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
+	setChartStat('o', `R²=${so.r2.toFixed(4)}  RMSE=${so.rmse.toFixed(1)} kPa  (deg=${doo})`);
+	setChartStat('p', "backend interpolation (display p′ positive)");
     userSim = null;
     setView('int', document.querySelectorAll('.cvb')[1]);
     showResults(data.parameters, hasUploaded
