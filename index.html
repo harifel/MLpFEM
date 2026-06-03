@@ -53,6 +53,10 @@ header{background:var(--card);border-bottom:1px solid var(--border);flex-shrink:
 .sn{font-family:'Courier New',monospace;font-size:.55rem;letter-spacing:.12em;color:var(--red);margin-bottom:.22rem}
 .step h4{font-size:.81rem;font-weight:700;margin-bottom:.14rem}
 .step p{font-size:.73rem;color:var(--mute)}
+@media(max-width:560px){
+  .steps{grid-template-columns:1fr 1fr}
+  .fmt{font-size:.72rem}
+}
 
 .fmt{display:grid;grid-template-columns:1fr 1fr 1fr;max-width:540px;
   border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:.5rem auto .32rem}
@@ -76,9 +80,9 @@ header{background:var(--card);border-bottom:1px solid var(--border);flex-shrink:
 .cvb{font-family:'Courier New',monospace;font-size:.66rem;letter-spacing:.03em;padding:.22rem .62rem;
   border:1px solid var(--border);cursor:pointer;background:var(--card);
   color:var(--mute);transition:all .15s;white-space:nowrap}
-.cvb:first-child{border-radius:var(--r) 0 0 var(--r)}
-.cvb:nth-child(2){border-left:none}
-.cvb:nth-child(3){border-radius:0 var(--r) var(--r) 0;border-left:none}
+.vbar .cvb + .cvb{border-left:none}
+.vbar .cvb:first-of-type{border-radius:var(--r) 0 0 var(--r)}
+.vbar .cvb:last-of-type{border-radius:0 var(--r) var(--r) 0}
 .cvb.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .vleg{display:flex;gap:.7rem;margin-left:.65rem;align-items:center}
 .vli{display:flex;align-items:center;gap:.24rem;font-family:'Courier New',monospace;font-size:.61rem;color:var(--mute)}
@@ -149,6 +153,36 @@ header{background:var(--card);border-bottom:1px solid var(--border);flex-shrink:
 .tstatus.info{background:#eef1ff;color:#2c4ab5}
 .tstatus.ok{background:#ebfbee;color:var(--green)}
 .tstatus.err{background:#fff5f5;color:var(--red)}
+
+@media(max-width:1040px){
+  body{overflow:auto}
+  .panel,.tool-layout{height:auto;min-height:calc(100vh - 83px)}
+  .tool-layout{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:auto minmax(520px,auto) auto auto;
+    grid-template-areas:"vbar vbar" "charts charts" "params ctrl";
+  }
+}
+@media(max-width:760px){
+  body{height:auto;min-height:100vh}
+  header{padding:.55rem .85rem;height:auto;gap:.6rem;align-items:flex-start;flex-wrap:wrap}
+  .tabbar{padding:0 .85rem;overflow-x:auto;scrollbar-width:thin}
+  .panel{padding:1rem .85rem;min-height:calc(100vh - 96px)}
+  .tool-layout{
+    padding:.6rem;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto auto auto auto;
+    grid-template-areas:"vbar" "ctrl" "params" "charts";
+    gap:.55rem;
+  }
+  .vbar{flex-wrap:wrap;align-items:flex-start}
+  .vleg{margin-left:0;flex-wrap:wrap}
+  .charts-area{grid-template-columns:1fr;grid-template-rows:repeat(4,minmax(220px,auto))}
+  .ch{min-height:220px}
+  .params-col,.ctrl-col{overflow:visible}
+  .ugrid{grid-template-columns:1fr}
+  .fmt{grid-template-columns:1.2fr 1fr 1fr;font-size:.72rem}
+}
 
 /* PLAXIS */
 .plax-wrap{max-width:760px}
@@ -237,11 +271,10 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
 <div class="tool-layout" id="p-tool">
 
   <div class="vbar">
-    <button class="cvb on" onclick="setView('raw',this)">Raw lab data</button>
-    <button class="cvb"    onclick="setView('int',this)">Interpolated</button>
+    <button class="cvb on" onclick="setView('int',this)">Interpolated input</button>
     <button class="cvb"    onclick="setView('sim',this)">+ ML simulation</button>
     <div class="vleg" id="vleg">
-      <span class="vli"><span class="vld-raw"></span>Lab data</span>
+      <span class="vli"><span class="vld-int"></span>Interpolated</span>
     </div>
   </div>
 
@@ -259,15 +292,27 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
         <p style="font-size:.77rem;color:var(--mute);line-height:1.5">Run analysis to see identified parameters.</p>
       </div>
     </div>
-    <div class="pcard" style="padding:.5rem .75rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem">
-        <label style="font-family:'Courier New',monospace;font-size:.58rem;letter-spacing:.06em;color:var(--mute);white-space:nowrap"><span class="s">q</span>–ε₁ degree</label>
-        <input type="number" id="deg" value="15" min="4" max="25" oninput="onDegreeChange()"
-          style="font-family:'Courier New',monospace;font-size:.78rem;color:var(--ink);
-          background:var(--bg);border:1px solid var(--border);padding:.26rem .42rem;
-          border-radius:4px;outline:none;width:58px;text-align:center"/>
+    <div class="pcard" style="padding:.6rem .75rem">
+      <div class="card-hd" style="margin-bottom:.5rem">Interpolation degree</div>
+      <div style="display:grid;grid-template-columns:42px 1fr 22px;align-items:center;gap:.3rem .5rem">
+        <span style="font-family:'Courier New',monospace;font-size:.66rem;color:var(--mute)"><span class="s">q</span>–ε₁</span>
+        <input type="range" id="deg_q" value="15" min="4" max="25" step="1"
+          oninput="onAnyDegreeChange()"
+          style="width:100%;accent-color:var(--ink);cursor:pointer"/>
+        <span id="deg_q_val" style="font-family:'Courier New',monospace;font-size:.74rem;font-weight:700;color:var(--ink);text-align:right">15</span>
+
+        <span style="font-family:'Courier New',monospace;font-size:.66rem;color:var(--mute)">ε<sub>vol</sub></span>
+        <input type="range" id="deg_v" value="10" min="4" max="25" step="1"
+          oninput="onAnyDegreeChange()"
+          style="width:100%;accent-color:var(--ink);cursor:pointer"/>
+        <span id="deg_v_val" style="font-family:'Courier New',monospace;font-size:.74rem;font-weight:700;color:var(--ink);text-align:right">10</span>
+
+        <span style="font-family:'Courier New',monospace;font-size:.66rem;color:var(--mute)">Oedo</span>
+        <input type="range" id="deg_o" value="4" min="2" max="12" step="1"
+          oninput="onAnyDegreeChange()"
+          style="width:100%;accent-color:var(--ink);cursor:pointer"/>
+        <span id="deg_o_val" style="font-family:'Courier New',monospace;font-size:.74rem;font-weight:700;color:var(--ink);text-align:right">4</span>
       </div>
-      <div style="font-family:'Courier New',monospace;font-size:.55rem;color:var(--faint);margin-top:.22rem">εvol=10 · oedo=4 (fixed)</div>
     </div>
   </div>
 
@@ -403,8 +448,8 @@ const PCFG = [
 
 let files={q:null,v:null,p:null,o:null};
 let rawData={q:null,v:null,p:null,o:null};
-let userInterp=null,userSim=null,lastRes=null;
-let view='raw',C={},chartsReady=false;
+let userInterp=null, previewInterp=null, userSim=null, lastRes=null;
+let view='int',C={},chartsReady=false;
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function showTab(id,btn){
@@ -414,9 +459,11 @@ function showTab(id,btn){
   document.getElementById('p-tool').style.display='none';
   if(id==='tool'){
     document.getElementById('p-tool').style.display='grid';
-    if(!chartsReady){initCharts();chartsReady=true;}
-    // Run interpolation on first open so Interpolated tab works immediately
-    if(rawData.q&&rawData.v&&rawData.o) runBrowserInterpolation();
+    if(!chartsReady){
+      initCharts(); chartsReady=true;
+      view='int';
+      document.querySelectorAll('.cvb').forEach((b,i)=>b.classList.toggle('on',i===0));
+    }
   } else {
     document.getElementById('p-'+id).style.display='block';
   }
@@ -433,21 +480,23 @@ window.addEventListener('DOMContentLoaded',()=>{
 // Pre-populate rawData with Karlsruhe embedded data so browser interpolation
 // works right away without needing to upload files first.
 function loadKFSRawData(){
-  // D.raw.q/v/p already in correct convention (strain negative, decimals)
-  // D.raw.o: x=sigma(neg), y=eps(neg) — same convention as uploaded files
   rawData = {
     q: {x:[...D.raw.q.x], y:[...D.raw.q.y]},
     v: {x:[...D.raw.v.x], y:[...D.raw.v.y]},
     p: {x:[...D.raw.p.x], y:[...D.raw.p.y]},
     o: {x:[...D.raw.o.x], y:[...D.raw.o.y]},
   };
-  // Mark upload cards as pre-loaded
+  // Set userInterp from the saved interpolated files (sklearn 1.2.2).
+  // This is the EXACT same input the paper prediction used.
+  // The browser OLS only replaces this when the user moves a slider.
+  userInterp = null;
   const labels={q:'KFS_q_eps1.txt',v:'KFS_epsvol.txt',p:'KFS_path.txt',o:'KFS_Oedometer.txt'};
   ['q','v','p','o'].forEach(k=>{
     const el=document.getElementById('un-'+k);
     el.textContent='● '+labels[k]; el.classList.add('ok');
     document.getElementById('uc-'+k).classList.add('done');
   });
+  runBrowserInterpolation();
 }
 
 // ── Charts ────────────────────────────────────────────────────────────────────
@@ -474,12 +523,15 @@ function mkC(id,xLbl,yLbl,revX,revY){
 }
 
 function initCharts(){
-  // Unicode Greek in axis labels — italic style applied via font config
-  C.q = mkC('ch-q','ε₁ (–)','q (kPa)',           true,  false);
-  C.v = mkC('ch-v','ε₁ (–)','εᵥ (–)', true, false);
-  C.o = mkC('ch-o','ε₁ (–)',"σ₁' (kPa)",   true,  true);
-  C.p = mkC('ch-p',"p' (kPa)",'q (kPa)',                         true,  false);
-  drawAll();
+  C.q = mkC('ch-q','ε₁ (–)','q (kPa)',    true,  false);
+  C.v = mkC('ch-v','ε₁ (–)','εᵥ (–)',    true,  false);
+  C.o = mkC('ch-o','ε₁ (–)',"σ₁' (kPa)", true,  true);
+  C.p = mkC('ch-p',"p' (kPa)",'q (kPa)', false, false);
+  // Double rAF: first frame shows the grid, second frame charts have real pixel size
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    drawAll();
+    setDefaultStats();
+  }));
 }
 
 // Draw order in Chart.js: LOWER order number = drawn ON TOP (rendered last)
@@ -500,41 +552,31 @@ function mkDS(color,x,y,ptRad,dashed,ord){
 
 function drawAll(){
   if(!chartsReady)return;
-  const showInt=view==='int'||view==='sim';
-  const showSim=view==='sim';
+  const showSim=view==='sim' && userSim!=null;
 
-  const rq=rawData.q||D.raw.q, rv=rawData.v||D.raw.v;
-  const rp=rawData.p||D.raw.p, ro=rawData.o||D.raw.o;
-  const iq=userInterp?.q||D.int.q, iv=userInterp?.v||D.int.v;
-  const ip=userInterp?.p||D.int.p, io=userInterp?.o||D.int.o;
-  const sq=userSim?.q||D.sim.q,   sv=userSim?.v||D.sim.v;
-  const sp=userSim?.p||D.sim.p,   so=userSim?.o||D.sim.o;
+  const iq=userInterp?.q || D.int.q;
+  const iv=userInterp?.v || D.int.v;
+  const ipRaw=userInterp?.p || D.int.p;
+  const ip={x:ipRaw.x.map(v=>Math.abs(v)), y:ipRaw.y};
+  const io=userInterp?.o || D.int.o;
+  const simPx=userSim?.p?.x ? userSim.p.x.map(v=>Math.abs(v)) : null;
 
-  function build(rx,ry,ix,iy,sx,sy){
-    const s=[];
-    // Raw behind everything: order 3
-    s.push(mkDS('#c8c5c0',rx,ry,2,false,3));
-    // Interpolated above raw: order 2
-    if(showInt) s.push(mkDS('#1a1a1a',ix,iy,0,false,2));
-    // ML sim on top of everything: order 1
-    if(showSim) s.push(mkDS('#3b5bdb',sx,sy,0,true,1));
+  function build(ix,iy,simX,simY){
+    const s=[mkDS('#1a1a1a',ix,iy,0,false,2)];
+    if(showSim && simX && simY) s.push(mkDS('#3b5bdb',simX,simY,0,true,1));
     return s;
   }
 
-  C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,sq.x,sq.y); C.q.update('none');
-  C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,sv.x,sv.y); C.v.update('none');
-  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,sp.x,sp.y); C.p.update('none');
-  // oedo raw: stored x=sigma, y=eps → swap for plot x=eps, y=sigma
+  C.q.data.datasets=build(iq.x,iq.y,userSim?.q?.x,userSim?.q?.y); C.q.update('none');
+  C.v.data.datasets=build(iv.x,iv.y,userSim?.v?.x,userSim?.v?.y); C.v.update('none');
+  C.p.data.datasets=build(ip.x,ip.y,simPx,userSim?.p?.y); C.p.update('none');
   {
-    const s=[];
-    s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
-    if(showInt) s.push(mkDS('#1a1a1a',io.x,io.y,0,false,2));
-    if(showSim) s.push(mkDS('#3b5bdb',so.x,so.y,0,true,1));
+    const s=[mkDS('#1a1a1a',io.x,io.y,0,false,2)];
+    if(showSim && userSim?.o) s.push(mkDS('#3b5bdb',userSim.o.x,userSim.o.y,0,true,1));
     C.o.data.datasets=s; C.o.update('none');
   }
 
-  let h=`<span class="vli"><span class="vld-raw"></span>Lab data</span>`;
-  if(showInt) h+=`<span class="vli"><span class="vld-int"></span>Interpolated</span>`;
+  let h=`<span class="vli"><span class="vld-int"></span>Interpolated</span>`;
   if(showSim) h+=`<span class="vli"><span class="vld-sim"></span>ML simulation</span>`;
   document.getElementById('vleg').innerHTML=h;
 }
@@ -544,6 +586,11 @@ function setView(v,btn){
   document.querySelectorAll('.cvb').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   drawAll();
+}
+
+// ── Default stats from D.int ─────────────────────────────────────────────────
+function setDefaultStats(){
+  runBrowserInterpolation();
 }
 
 // ── Stats helpers ─────────────────────────────────────────────────────────────
@@ -557,6 +604,26 @@ function evalStats(xArr,yArr,deg){
 }
 function setChartStat(id,text){
   const el=document.getElementById('stat-'+id); if(el) el.textContent=text;
+}
+
+function interpLinear(xArr, yArr, x){
+  const n=xArr.length;
+  if(n===0) return NaN;
+  if(x<=xArr[0]) return yArr[0];
+  if(x>=xArr[n-1]) return yArr[n-1];
+  for(let i=1;i<n;i++){
+    const x0=xArr[i-1], x1=xArr[i];
+    if((x>=x0&&x<=x1)||(x<=x0&&x>=x1)){
+      const t=(x-x0)/(x1-x0);
+      return yArr[i-1] + t*(yArr[i]-yArr[i-1]);
+    }
+  }
+  return yArr[n-1];
+}
+
+function statsFromCurve(rawX, rawY, curveX, curveY){
+  const pred = rawX.map(x=>interpLinear(curveX, curveY, x));
+  return r2rmse(rawY, pred);
 }
 
 // ── Browser-side polynomial interpolation ────────────────────────────────────
@@ -585,70 +652,72 @@ function polyFit(xArr, yArr, xNew, degree) {
   return xNew.map(x=>coef.reduce((s,c,p)=>s+c*Math.pow(x,p+1),0));
 }
 
-function runBrowserInterpolation() {
-  if(!rawData.q||!rawData.v||!rawData.o) return;
-  const deg=Math.max(4,Math.min(25,parseInt(document.getElementById('deg').value)||15));
-  const x_syn=Array.from({length:250},(_,i)=>0+i*(-0.25)/249);
-
-  // ── q–ε₁ (degree from UI) ─────────────────────────────────────────────────
-  const qI=polyFit(rawData.q.x,rawData.q.y,x_syn,deg);
-  const sqS=evalStats(rawData.q.x,rawData.q.y,deg);
-  setChartStat('q',`R²=${sqS.r2.toFixed(4)}  RMSE=${sqS.rmse.toFixed(1)} kPa  (deg=${deg})`);
-
-  // ── εvol–ε₁ (degree=10, fixed) ────────────────────────────────────────────
-  const evI=polyFit(rawData.v.x,rawData.v.y,x_syn,10);
-  const svS=evalStats(rawData.v.x,rawData.v.y,10);
-  setChartStat('v',`R²=${svS.r2.toFixed(4)}  RMSE=${svS.rmse.toFixed(5)}  (deg=10)`);
-
-  // ── Stress path (interp_change=False — linspace only, NO regression) ───────
-  // Script: x_true=p'(neg), y_true=q(pos)
-  //   y_pred=linspace(max(p'),min(p'),250)  saved as col0
-  //   x_syn =linspace(min(q), max(q), 250)  saved as col1
-  // Stress path: use D.raw.p always (raw.p.x=p'neg, raw.p.y=q)
-  // Script: y_pred=linspace(max(p'),min(p'),250), x_syn=linspace(min(q),max(q),250)
-  const pArr=(rawData.p&&rawData.p.x.length)?rawData.p.x:D.raw.p.x;
-  const qArr=(rawData.p&&rawData.p.y.length)?rawData.p.y:D.raw.p.y;
-  const maxP=Math.max(...pArr), minP=Math.min(...pArr);
-  const minQ=Math.min(...qArr), maxQ=Math.max(...qArr);
-  const p_pred=Array.from({length:250},(_,i)=>maxP+i*(minP-maxP)/249);
-  const q_syn =Array.from({length:250},(_,i)=>minQ+i*(maxQ-minQ)/249);
-  setChartStat('p','linspace only (no fit)');
-
-  // ── Oedometer (degree=4, fixed) ───────────────────────────────────────────
-  const sigArr=rawData.o.x, epsArr=rawData.o.y;
-  const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
-  const sigL=sigArr.slice(0,minSigIdx+1), epsL=epsArr.slice(0,minSigIdx+1);
-  let sigU=sigArr.slice(minSigIdx), epsU=epsArr.slice(minSigIdx);
-  const ci=sigU.findIndex(s=>s>-50);
-  if(ci>0){sigU=sigU.slice(0,ci);epsU=epsU.slice(0,ci);}
-  const minEL=Math.min(...epsL), maxEU=Math.max(...epsU);
-  const gL=Array.from({length:375},(_,i)=>0+i*minEL/374);
-  const gU=Array.from({length:375},(_,i)=>minEL+i*(maxEU-minEL)/374);
-  const sLI=polyFit(epsL,sigL,gL,4), sUI=polyFit(epsU,sigU,gU,4);
-  const st1=r2rmse(sigL,polyFit(epsL,sigL,epsL,4));
-  const st2=r2rmse(sigU,polyFit(epsU,sigU,epsU,4));
-  const r2o=(st1.r2+st2.r2)/2, rmseo=(st1.rmse+st2.rmse)/2;
-  setChartStat('o',`R²=${r2o.toFixed(4)}  RMSE=${rmseo.toFixed(1)} kPa  (deg=4)`);
-
-  userInterp={
-    q:{x:x_syn,            y:qI},
-    v:{x:x_syn,            y:evI},
-    p:{x:p_pred,           y:q_syn},
-    o:{x:[...gL,...gU],    y:[...sLI,...sUI]}
-  };
-  if(view==='raw') setView('int',document.querySelectorAll('.cvb')[1]);
-  else drawAll();
+function getDegrees(){
+  const q=Math.max(4,Math.min(25,parseInt(document.getElementById('deg_q').value)||15));
+  const v=Math.max(4,Math.min(25,parseInt(document.getElementById('deg_v').value)||10));
+  const o=Math.max(2,Math.min(12,parseInt(document.getElementById('deg_o').value)||4));
+  document.getElementById('deg_q_val').textContent=q;
+  document.getElementById('deg_v_val').textContent=v;
+  document.getElementById('deg_o_val').textContent=o;
+  return {q,v,o};
 }
 
-function onDegreeChange(){
-  clearTimeout(window._degTimer);
-  window._degTimer=setTimeout(()=>{
-    if(rawData.q&&rawData.v&&rawData.o){
-      runBrowserInterpolation();
-      setStatus('info',`q\u2013\u03b5\u2081 degree=${document.getElementById('deg').value} updated. \u03b5vol deg=10, oedo deg=4 fixed. Click Identify to run the model.`);
+async function runBrowserInterpolation() {
+  const hasUploaded = files.q && files.v && files.p && files.o;
+  const hasRaw = rawData.q && rawData.v && rawData.p && rawData.o;
+  if(!hasUploaded && !hasRaw) return;
+
+  try{
+    const form = new FormData();
+    const src = (key, uploaded) => uploaded || rawDataToBlob(key);
+
+    form.append('q_eps1_file', src('q', files.q), 'q.txt');
+    form.append('epsvol_file', src('v', files.v), 'v.txt');
+    form.append('path_file',   src('p', files.p), 'p.txt');
+    form.append('oedo_file',   src('o', files.o), 'o.txt');
+
+    const {q:dq,v:dv,o:doo}=getDegrees();
+    form.append('poly_degree_q', dq);
+    form.append('poly_degree_v', dv);
+    form.append('poly_degree_o', doo);
+
+    const resp = await fetch(API+'/interpolate', {method:'POST', body:form});
+    if(!resp.ok){
+      const e = await resp.json().catch(()=>({detail:'HTTP '+resp.status}));
+      throw new Error(e.detail || ('HTTP '+resp.status));
     }
-  },400);
+    const data = await resp.json();
+
+    // Display only: flip p′ sign to positive
+    userInterp = {
+      q: data.curves.q_eps1,
+      v: data.curves.epsvol,
+      p: { x: data.curves.path.x.map(v => -v), y: data.curves.path.y },
+      o: data.curves.oedo
+    };
+
+	const sq = statsFromCurve(rawData.q.x, rawData.q.y, userInterp.q.x, userInterp.q.y);
+	const sv = statsFromCurve(rawData.v.x, rawData.v.y, userInterp.v.x, userInterp.v.y);
+	const so = statsFromCurve(rawData.o.y, rawData.o.x, userInterp.o.x, userInterp.o.y);
+
+	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
+	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
+	setChartStat('o', `R²=${so.r2.toFixed(4)}  RMSE=${so.rmse.toFixed(1)} kPa  (deg=${doo})`);
+	setChartStat('p', "backend interpolation (display p′ positive)");
+	
+    if(view!=='sim') setView('int',document.querySelectorAll('.cvb')[0]);
+    else drawAll();
+
+    setStatus('info','Preview from backend interpolation (same as prediction input).');
+  }catch(e){
+    setStatus('err','Interpolation error: '+e.message);
+  }
 }
+function onAnyDegreeChange(){
+  getDegrees();
+  runBrowserInterpolation();
+}
+
 
 // ── Files ─────────────────────────────────────────────────────────────────────
 function gotFile(k,inp){
@@ -666,9 +735,11 @@ function gotFile(k,inp){
       if(p.length>=2){const x=parseFloat(p[0]),y=parseFloat(p[1]);if(!isNaN(x)&&!isNaN(y)){xs.push(x);ys.push(y);}}
     });
     rawData[k]={x:xs,y:ys};
-    if(view==='raw') drawAll();
-    // Auto-run interpolation preview once all 3 triaxial files are loaded
-    if(rawData.q&&rawData.v&&rawData.o) runBrowserInterpolation();
+	if(rawData.q && rawData.v && rawData.p && rawData.o){
+		runBrowserInterpolation();
+		}
+    // Auto-run interpolation preview once all 4 lab files are loaded
+
   };
   reader.readAsText(f);
 }
@@ -676,6 +747,7 @@ function gotFile(k,inp){
 function cpChanged(){
   document.getElementById('mnote').style.display=
     document.getElementById('cp').value!=='200'?'block':'none';
+  runBrowserInterpolation();
 }
 
 // ── Run ───────────────────────────────────────────────────────────────────────
@@ -721,7 +793,10 @@ async function runAnalysis(){
     form.append('path_file',   src('p', files.p), 'p.txt');
     form.append('oedo_file',   src('o', files.o), 'o.txt');
     form.append('cell_pressure', document.getElementById('cp').value);
-    form.append('poly_degree',   document.getElementById('deg').value);
+    const {q:dq,v:dv,o:doo}=getDegrees();
+    form.append('poly_degree_q', dq);
+    form.append('poly_degree_v', dv);
+    form.append('poly_degree_o', doo);
 
     const resp = await fetch(API+'/predict', {method:'POST', body:form});
     if(!resp.ok){
@@ -729,10 +804,22 @@ async function runAnalysis(){
       throw new Error(e.detail||'HTTP '+resp.status);
     }
     const data = await resp.json();
-    userInterp = {q:data.curves.q_eps1, v:data.curves.epsvol,
-                  p:data.curves.path,   o:data.curves.oedo};
+	userInterp = {
+	  q:data.curves.q_eps1,
+	  v:data.curves.epsvol,
+	  p:{ x:data.curves.path.x.map(v => -v), y:data.curves.path.y },
+	  o:data.curves.oedo
+	};
+	const sq = statsFromCurve(rawData.q.x, rawData.q.y, userInterp.q.x, userInterp.q.y);
+	const sv = statsFromCurve(rawData.v.x, rawData.v.y, userInterp.v.x, userInterp.v.y);
+	const so = statsFromCurve(rawData.o.y, rawData.o.x, userInterp.o.x, userInterp.o.y);
+
+	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
+	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
+	setChartStat('o', `R²=${so.r2.toFixed(4)}  RMSE=${so.rmse.toFixed(1)} kPa  (deg=${doo})`);
+	setChartStat('p', "backend interpolation (display p′ positive)");
     userSim = null;
-    setView('int', document.querySelectorAll('.cvb')[1]);
+    setView('int', document.querySelectorAll('.cvb')[0]);
     showResults(data.parameters, hasUploaded
       ? 'Result · σ₃ = '+data.parameters.CellPressure+' kPa'
       : 'Karlsruhe Fine Sand · 200 kPa');
@@ -852,13 +939,14 @@ function resetKFS(){
   document.getElementById('status').style.display='none';
   document.getElementById('mnote').style.display='none';
   document.getElementById('cp').value='200';
-  document.getElementById('deg').value='15';
-  view='raw';
+  document.getElementById('deg_q').value='15';
+  document.getElementById('deg_v').value='10';
+  document.getElementById('deg_o').value='4';
+  getDegrees();
+  view='int';
   document.querySelectorAll('.cvb').forEach((b,i)=>b.classList.toggle('on',i===0));
   drawAll();
   updatePlaxisScript(KFS);
-  // Run interpolation immediately so the Interpolated tab is ready
-  runBrowserInterpolation();
 }
 
 // ── Export ────────────────────────────────────────────────────────────────────

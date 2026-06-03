@@ -53,6 +53,10 @@ header{background:var(--card);border-bottom:1px solid var(--border);flex-shrink:
 .sn{font-family:'Courier New',monospace;font-size:.55rem;letter-spacing:.12em;color:var(--red);margin-bottom:.22rem}
 .step h4{font-size:.81rem;font-weight:700;margin-bottom:.14rem}
 .step p{font-size:.73rem;color:var(--mute)}
+@media(max-width:560px){
+  .steps{grid-template-columns:1fr 1fr}
+  .fmt{font-size:.72rem}
+}
 
 .fmt{display:grid;grid-template-columns:1fr 1fr 1fr;max-width:540px;
   border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:.5rem auto .32rem}
@@ -76,9 +80,9 @@ header{background:var(--card);border-bottom:1px solid var(--border);flex-shrink:
 .cvb{font-family:'Courier New',monospace;font-size:.66rem;letter-spacing:.03em;padding:.22rem .62rem;
   border:1px solid var(--border);cursor:pointer;background:var(--card);
   color:var(--mute);transition:all .15s;white-space:nowrap}
-.cvb:first-child{border-radius:var(--r) 0 0 var(--r)}
-.cvb:nth-child(2){border-left:none}
-.cvb:nth-child(3){border-radius:0 var(--r) var(--r) 0;border-left:none}
+.vbar .cvb + .cvb{border-left:none}
+.vbar .cvb:first-of-type{border-radius:var(--r) 0 0 var(--r)}
+.vbar .cvb:last-of-type{border-radius:0 var(--r) var(--r) 0}
 .cvb.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .vleg{display:flex;gap:.7rem;margin-left:.65rem;align-items:center}
 .vli{display:flex;align-items:center;gap:.24rem;font-family:'Courier New',monospace;font-size:.61rem;color:var(--mute)}
@@ -149,6 +153,36 @@ header{background:var(--card);border-bottom:1px solid var(--border);flex-shrink:
 .tstatus.info{background:#eef1ff;color:#2c4ab5}
 .tstatus.ok{background:#ebfbee;color:var(--green)}
 .tstatus.err{background:#fff5f5;color:var(--red)}
+
+@media(max-width:1040px){
+  body{overflow:auto}
+  .panel,.tool-layout{height:auto;min-height:calc(100vh - 83px)}
+  .tool-layout{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:auto minmax(520px,auto) auto auto;
+    grid-template-areas:"vbar vbar" "charts charts" "params ctrl";
+  }
+}
+@media(max-width:760px){
+  body{height:auto;min-height:100vh}
+  header{padding:.55rem .85rem;height:auto;gap:.6rem;align-items:flex-start;flex-wrap:wrap}
+  .tabbar{padding:0 .85rem;overflow-x:auto;scrollbar-width:thin}
+  .panel{padding:1rem .85rem;min-height:calc(100vh - 96px)}
+  .tool-layout{
+    padding:.6rem;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto auto auto auto;
+    grid-template-areas:"vbar" "ctrl" "params" "charts";
+    gap:.55rem;
+  }
+  .vbar{flex-wrap:wrap;align-items:flex-start}
+  .vleg{margin-left:0;flex-wrap:wrap}
+  .charts-area{grid-template-columns:1fr;grid-template-rows:repeat(4,minmax(220px,auto))}
+  .ch{min-height:220px}
+  .params-col,.ctrl-col{overflow:visible}
+  .ugrid{grid-template-columns:1fr}
+  .fmt{grid-template-columns:1.2fr 1fr 1fr;font-size:.72rem}
+}
 
 /* PLAXIS */
 .plax-wrap{max-width:760px}
@@ -237,11 +271,10 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
 <div class="tool-layout" id="p-tool">
 
   <div class="vbar">
-    <button class="cvb on" onclick="setView('raw',this)">Raw lab data</button>
-    <button class="cvb"    onclick="setView('int',this)">Interpolated</button>
+    <button class="cvb on" onclick="setView('int',this)">Interpolated input</button>
     <button class="cvb"    onclick="setView('sim',this)">+ ML simulation</button>
     <div class="vleg" id="vleg">
-      <span class="vli"><span class="vld-raw"></span>Lab data</span>
+      <span class="vli"><span class="vld-int"></span>Interpolated</span>
     </div>
   </div>
 
@@ -416,7 +449,7 @@ const PCFG = [
 let files={q:null,v:null,p:null,o:null};
 let rawData={q:null,v:null,p:null,o:null};
 let userInterp=null, previewInterp=null, userSim=null, lastRes=null;
-let view='raw',C={},chartsReady=false;
+let view='int',C={},chartsReady=false;
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function showTab(id,btn){
@@ -428,10 +461,8 @@ function showTab(id,btn){
     document.getElementById('p-tool').style.display='grid';
     if(!chartsReady){
       initCharts(); chartsReady=true;
-      // Always start on Raw lab data view
-      view='raw';
+      view='int';
       document.querySelectorAll('.cvb').forEach((b,i)=>b.classList.toggle('on',i===0));
-      // userInterp is already D.int from loadKFSRawData — correct for Interpolated view
     }
   } else {
     document.getElementById('p-'+id).style.display='block';
@@ -521,47 +552,31 @@ function mkDS(color,x,y,ptRad,dashed,ord){
 
 function drawAll(){
   if(!chartsReady)return;
-  const showInt=view==='int'||view==='sim';
-  const showSim=view==='sim' && userSim!=null;  // only show sim if explicitly set
+  const showSim=view==='sim' && userSim!=null;
 
-  const rq=rawData.q||D.raw.q, rv=rawData.v||D.raw.v;
+  const iq=userInterp?.q || D.int.q;
+  const iv=userInterp?.v || D.int.v;
+  const ipRaw=userInterp?.p || D.int.p;
+  const ip={x:ipRaw.x.map(v=>Math.abs(v)), y:ipRaw.y};
+  const io=userInterp?.o || D.int.o;
+  const simPx=userSim?.p?.x ? userSim.p.x.map(v=>Math.abs(v)) : null;
 
-  // Always display p′ as positive (for raw + interpolated + sim)
-  const rpSrc = rawData.p || D.raw.p;
-  const rp = { x: rpSrc.x.map(v => Math.abs(v)), y: rpSrc.y };
-
-  const ro=rawData.o||D.raw.o;
-
-  // Do not force D.int as default interpolation; use raw unless backend interp is available
-  const iq=userInterp?.q || rq;
-  const iv=userInterp?.v || rv;
-  const ipRaw=userInterp?.p || rp;
-  const ip={ x: ipRaw.x.map(v => Math.abs(v)), y: ipRaw.y };
-  const io=userInterp?.o || {x:ro.y, y:ro.x};
-
-  const simPx = userSim?.p?.x ? userSim.p.x.map(v => Math.abs(v)) : null;
-
-  function build(rx,ry,ix,iy,simX,simY){
-    const s=[];
-    s.push(mkDS('#c8c5c0',rx,ry,2,false,3));
-    if(showInt) s.push(mkDS('#1a1a1a',ix,iy,0,false,2));
+  function build(ix,iy,simX,simY){
+    const s=[mkDS('#1a1a1a',ix,iy,0,false,2)];
     if(showSim && simX && simY) s.push(mkDS('#3b5bdb',simX,simY,0,true,1));
     return s;
   }
 
-  C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,userSim?.q?.x,userSim?.q?.y); C.q.update('none');
-  C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,userSim?.v?.x,userSim?.v?.y); C.v.update('none');
-  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,simPx,userSim?.p?.y); C.p.update('none');
+  C.q.data.datasets=build(iq.x,iq.y,userSim?.q?.x,userSim?.q?.y); C.q.update('none');
+  C.v.data.datasets=build(iv.x,iv.y,userSim?.v?.x,userSim?.v?.y); C.v.update('none');
+  C.p.data.datasets=build(ip.x,ip.y,simPx,userSim?.p?.y); C.p.update('none');
   {
-    const s=[];
-    s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
-    if(showInt) s.push(mkDS('#1a1a1a',io.x,io.y,0,false,2));
+    const s=[mkDS('#1a1a1a',io.x,io.y,0,false,2)];
     if(showSim && userSim?.o) s.push(mkDS('#3b5bdb',userSim.o.x,userSim.o.y,0,true,1));
     C.o.data.datasets=s; C.o.update('none');
   }
 
-  let h=`<span class="vli"><span class="vld-raw"></span>Lab data</span>`;
-  if(showInt) h+=`<span class="vli"><span class="vld-int"></span>Interpolated</span>`;
+  let h=`<span class="vli"><span class="vld-int"></span>Interpolated</span>`;
   if(showSim) h+=`<span class="vli"><span class="vld-sim"></span>ML simulation</span>`;
   document.getElementById('vleg').innerHTML=h;
 }
@@ -690,7 +705,7 @@ async function runBrowserInterpolation() {
 	setChartStat('o', `R²=${so.r2.toFixed(4)}  RMSE=${so.rmse.toFixed(1)} kPa  (deg=${doo})`);
 	setChartStat('p', "backend interpolation (display p′ positive)");
 	
-    if(view==='raw') setView('int',document.querySelectorAll('.cvb')[1]);
+    if(view!=='sim') setView('int',document.querySelectorAll('.cvb')[0]);
     else drawAll();
 
     setStatus('info','Preview from backend interpolation (same as prediction input).');
@@ -723,8 +738,7 @@ function gotFile(k,inp){
 	if(rawData.q && rawData.v && rawData.p && rawData.o){
 		runBrowserInterpolation();
 		}
-    if(view==='raw') drawAll();
-    // Auto-run interpolation preview once all 3 triaxial files are loaded
+    // Auto-run interpolation preview once all 4 lab files are loaded
 
   };
   reader.readAsText(f);
@@ -805,7 +819,7 @@ async function runAnalysis(){
 	setChartStat('o', `R²=${so.r2.toFixed(4)}  RMSE=${so.rmse.toFixed(1)} kPa  (deg=${doo})`);
 	setChartStat('p', "backend interpolation (display p′ positive)");
     userSim = null;
-    setView('int', document.querySelectorAll('.cvb')[1]);
+    setView('int', document.querySelectorAll('.cvb')[0]);
     showResults(data.parameters, hasUploaded
       ? 'Result · σ₃ = '+data.parameters.CellPressure+' kPa'
       : 'Karlsruhe Fine Sand · 200 kPa');
@@ -929,7 +943,7 @@ function resetKFS(){
   document.getElementById('deg_v').value='10';
   document.getElementById('deg_o').value='4';
   getDegrees();
-  view='raw';
+  view='int';
   document.querySelectorAll('.cvb').forEach((b,i)=>b.classList.toggle('on',i===0));
   drawAll();
   updatePlaxisScript(KFS);
