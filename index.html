@@ -553,30 +553,35 @@ function mkDS(color,x,y,ptRad,dashed,ord){
 function drawAll(){
   if(!chartsReady)return;
   const showSim=view==='sim' && userSim!=null;
-
-  const iq=userInterp?.q || D.int.q;
-  const iv=userInterp?.v || D.int.v;
-  const ipRaw=userInterp?.p || D.int.p;
+  const rawQ=rawData.q;
+  const rawV=rawData.v;
+  const rawP=rawData.p ? {x:rawData.p.x.map(v=>Math.abs(v)), y:rawData.p.y} : null;
+  const rawO=rawData.o ? {x:rawData.o.y, y:rawData.o.x} : null;
+  const iq=userInterp?.q || {x:[], y:[]};
+  const iv=userInterp?.v || {x:[], y:[]};
+  const ipRaw=userInterp?.p || {x:[], y:[]};
   const ip={x:ipRaw.x.map(v=>Math.abs(v)), y:ipRaw.y};
-  const io=userInterp?.o || D.int.o;
+  const io=userInterp?.o || {x:[], y:[]};
   const simPx=userSim?.p?.x ? userSim.p.x.map(v=>Math.abs(v)) : null;
 
-  function build(ix,iy,simX,simY){
-    const s=[mkDS('#1a1a1a',ix,iy,0,false,2)];
+  function build(rawX,rawY,ix,iy,simX,simY){
+    const s=[];
+    if(rawX && rawY) s.push(mkDS('#8c8c8c',rawX,rawY,2,false,3));
+    if(ix?.length && iy?.length) s.push(mkDS('#1a1a1a',ix,iy,0,false,2));
     if(showSim && simX && simY) s.push(mkDS('#3b5bdb',simX,simY,0,true,1));
     return s;
   }
 
-  C.q.data.datasets=build(iq.x,iq.y,userSim?.q?.x,userSim?.q?.y); C.q.update('none');
-  C.v.data.datasets=build(iv.x,iv.y,userSim?.v?.x,userSim?.v?.y); C.v.update('none');
-  C.p.data.datasets=build(ip.x,ip.y,simPx,userSim?.p?.y); C.p.update('none');
+  C.q.data.datasets=build(rawQ?.x,rawQ?.y,iq.x,iq.y,userSim?.q?.x,userSim?.q?.y); C.q.update('none');
+  C.v.data.datasets=build(rawV?.x,rawV?.y,iv.x,iv.y,userSim?.v?.x,userSim?.v?.y); C.v.update('none');
+  C.p.data.datasets=build(rawP?.x,rawP?.y,ip.x,ip.y,simPx,userSim?.p?.y); C.p.update('none');
   {
-    const s=[mkDS('#1a1a1a',io.x,io.y,0,false,2)];
-    if(showSim && userSim?.o) s.push(mkDS('#3b5bdb',userSim.o.x,userSim.o.y,0,true,1));
+    const s=build(rawO?.x,rawO?.y,io.x,io.y,userSim?.o?.x,userSim?.o?.y);
     C.o.data.datasets=s; C.o.update('none');
   }
 
-  let h=`<span class="vli"><span class="vld-int"></span>Interpolated</span>`;
+  let h=`<span class="vli"><span class="vld-raw"></span>Raw data</span>`;
+  if(iq.x.length || iv.x.length || ip.x.length || io.x.length) h+=`<span class="vli"><span class="vld-int"></span>Interpolated</span>`;
   if(showSim) h+=`<span class="vli"><span class="vld-sim"></span>ML simulation</span>`;
   document.getElementById('vleg').innerHTML=h;
 }
@@ -663,18 +668,15 @@ function getDegrees(){
 }
 
 async function runBrowserInterpolation() {
-  const hasUploaded = files.q && files.v && files.p && files.o;
   const hasRaw = rawData.q && rawData.v && rawData.p && rawData.o;
-  if(!hasUploaded && !hasRaw) return;
+  if(!hasRaw) return;
 
   try{
     const form = new FormData();
-    const src = (key, uploaded) => uploaded || rawDataToBlob(key);
-
-    form.append('q_eps1_file', src('q', files.q), 'q.txt');
-    form.append('epsvol_file', src('v', files.v), 'v.txt');
-    form.append('path_file',   src('p', files.p), 'p.txt');
-    form.append('oedo_file',   src('o', files.o), 'o.txt');
+    form.append('q_eps1_file', rawDataToBlob('q'), 'q.txt');
+    form.append('epsvol_file', rawDataToBlob('v'), 'v.txt');
+    form.append('path_file',   rawDataToBlob('p'), 'p.txt');
+    form.append('oedo_file',   rawDataToBlob('o'), 'o.txt');
 
     const {q:dq,v:dv,o:doo}=getDegrees();
     form.append('poly_degree_q', dq);
@@ -787,11 +789,10 @@ async function runAnalysis(){
   busy(true); setStatus('info','Sending data to model…');
   try{
     const form = new FormData();
-    const src = (key, uploaded) => uploaded || rawDataToBlob(key);
-    form.append('q_eps1_file', src('q', files.q), 'q.txt');
-    form.append('epsvol_file', src('v', files.v), 'v.txt');
-    form.append('path_file',   src('p', files.p), 'p.txt');
-    form.append('oedo_file',   src('o', files.o), 'o.txt');
+    form.append('q_eps1_file', rawDataToBlob('q'), 'q.txt');
+    form.append('epsvol_file', rawDataToBlob('v'), 'v.txt');
+    form.append('path_file',   rawDataToBlob('p'), 'p.txt');
+    form.append('oedo_file',   rawDataToBlob('o'), 'o.txt');
     form.append('cell_pressure', document.getElementById('cp').value);
     const {q:dq,v:dv,o:doo}=getDegrees();
     form.append('poly_degree_q', dq);
