@@ -796,7 +796,6 @@ async function runAnalysis(){
 	  p:{ x:data.curves.path.x.map(v => -v), y:data.curves.path.y },
 	  o:data.curves.oedo
 	};
-	const {q:dq,v:dv,o:doo}=getDegrees();
 	const sq = statsFromCurve(rawData.q.x, rawData.q.y, userInterp.q.x, userInterp.q.y);
 	const sv = statsFromCurve(rawData.v.x, rawData.v.y, userInterp.v.x, userInterp.v.y);
 	const so = statsFromCurve(rawData.o.y, rawData.o.x, userInterp.o.x, userInterp.o.y);
