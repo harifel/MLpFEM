@@ -177,6 +177,30 @@ pre.code{margin:0;padding:.8rem .95rem;overflow-x:auto;
 /* Symbol rendering — italic Georgia for Greek/math */
 .s{font-style:italic;font-family:Georgia,'Times New Roman',serif}
 sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
+
+/* visitor badge row */
+.about-sub-row{display:flex;align-items:center;justify-content:center;gap:.45rem;flex-wrap:wrap;margin-bottom:.55rem}
+.about-sub-row .about-sub{margin-bottom:0}
+.hit-badge{height:16px;vertical-align:middle}
+
+/* ── MOBILE (≤ 640 px) ── */
+@media(max-width:640px){
+  body{height:auto;min-height:100vh;overflow:auto}
+  .panel{height:auto;overflow-y:visible}
+  header{padding:0 .75rem}
+  .tabbar{overflow-x:auto;padding:0 .5rem;scrollbar-width:none}
+  .tabbar::-webkit-scrollbar{display:none}
+  .tab{padding:.55rem .65rem}
+  .panel{padding:1rem .75rem}
+  .steps{grid-template-columns:1fr 1fr}
+  .fmt{grid-template-columns:1fr 1fr;max-width:100%}
+  .tool-layout{display:flex !important;flex-direction:column;height:auto;overflow-y:auto;padding:.65rem .5rem;gap:.5rem}
+  .charts-area{display:flex;flex-direction:column;height:auto;gap:.45rem}
+  .ch{min-height:200px}
+  .vbar{flex-wrap:wrap;gap:.25rem}
+  .params-col,.ctrl-col{overflow-y:visible;max-height:none}
+  .ugrid{grid-template-columns:1fr 1fr}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -197,7 +221,10 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
 <!-- ABOUT -->
 <div class="panel" id="p-about" style="display:block">
   <div class="about-wrap">
-    <span class="about-sub">TU Graz · Institute of Soil Mechanics, Foundation Engineering and Computational Geotechnics &amp; NGI</span>
+    <div class="about-sub-row">
+      <span class="about-sub">TU Graz · Institute of Soil Mechanics, Foundation Engineering and Computational Geotechnics &amp; NGI</span>
+      <img class="hit-badge" src="https://hits.sh/harifel.github.io/MLpFEM.svg?style=flat&amp;label=visitors&amp;color=4a90d9" alt="visitors">
+    </div>
     <h1>Identify <b>Hardening Soil</b> parameters from lab tests — in one second</h1>
     <p class="lead">Upload a drained triaxial test and an oedometer test. The XGBoost surrogate returns the full HS parameter set, ready for PLAXIS.</p>
     <div class="tags">
