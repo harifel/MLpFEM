@@ -206,6 +206,7 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
 .table-wrap{overflow-x:auto}
 table{width:100%;min-width:340px}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
@@ -260,7 +261,7 @@ table{width:100%;min-width:340px}
       <div class="fc"><span class="s">ε</span><sub>1</sub> (–)</div>
       <div class="fc"><span class="s">σ</span><sub>1</sub>′ (kPa)</div>
     </div>
-    <p style="font-size:.75rem;color:var(--mute)">Download Karlsruhe Fine Sand template files from the Analysis tool tab.</p>
+    <p style="font-size:.75rem;color:var(--mute)">Download MLpFEM template files from the Analysis tool tab.</p>
   </div>
 </div>
 
@@ -340,7 +341,7 @@ table{width:100%;min-width:340px}
         <button class="btn bp" id="rbtn" onclick="runAnalysis()">
           Identify parameters<span class="spin" id="spin"></span>
         </button>
-        <button class="btn bo" onclick="resetKFS()">Reset Karlsruhe template</button>
+        <button class="btn bo" onclick="resetKFS()">Reset MLpFEM template</button>
         <button class="btn bo" onclick="dlTemplates()">Download template files ↓</button>
         <button class="btn be" id="exp-btn" style="display:none" onclick="exportTxt()">Export for PLAXIS ↓</button>
       </div>
@@ -441,7 +442,7 @@ const APPROVED_DEGREE_Q = 15;
 function hasUploadedLabData(){
   return !!(files.q||files.v||files.p||files.o);
 }
-function isKarlsruheTemplateSelection(){
+function isMLpFEMTemplateSelection(){
   return !hasUploadedLabData() && document.getElementById('cp').value==='200';
 }
 function hasApprovedDegreesForBuiltinSim(){
@@ -449,7 +450,7 @@ function hasApprovedDegreesForBuiltinSim(){
   return d===APPROVED_DEGREE_Q;
 }
 function canUseBuiltinSim(){
-  return isKarlsruheTemplateSelection() && hasApprovedDegreesForBuiltinSim();
+  return isMLpFEMTemplateSelection() && hasApprovedDegreesForBuiltinSim();
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
@@ -476,7 +477,7 @@ window.addEventListener('DOMContentLoaded',()=>{
   loadKFSRawData(); // pre-populate so degree slider works immediately
 });
 
-// Pre-populate rawData with Karlsruhe embedded data so browser interpolation
+// Pre-populate rawData with MLpFEM embedded data so browser interpolation
 // works right away without needing to upload files first.
 function loadKFSRawData(){
   // D.raw.q/v/p already in correct convention (strain negative, decimals)
@@ -488,7 +489,7 @@ function loadKFSRawData(){
     o: {x:[...D.raw.o.x], y:[...D.raw.o.y]},
   };
   // Mark upload cards as pre-loaded
-  const labels={q:'KFS_q_eps1.txt',v:'KFS_epsvol.txt',p:'KFS_path.txt',o:'KFS_Oedometer.txt'};
+  const labels={q:'MLpFEM_q_eps1.txt',v:'MLpFEM_epsvol.txt',p:'MLpFEM_path.txt',o:'MLpFEM_Oedometer.txt'};
   ['q','v','p','o'].forEach(k=>{
     const el=document.getElementById('un-'+k);
     el.textContent='● '+labels[k]; el.classList.add('ok');
@@ -593,7 +594,7 @@ function setView(v,btn){
   btn.classList.add('on');
   drawAll();
   if(v==='sim' && !userSim && !canUseBuiltinSim()){
-    setStatus('info','Built-in ML simulation is only available for Karlsruhe template at degree 15. For other data/degrees, upload your own simulation curves.');
+    setStatus('info','Built-in ML simulation is only available for MLpFEM template at degree 15. For other data/degrees, upload your own simulation curves.');
   }
 }
 
@@ -761,7 +762,7 @@ async function runAnalysis(){
   const hasUploaded = files.q && files.v && files.p && files.o;
   const hasRaw = rawData.q && rawData.v && rawData.p && rawData.o;
   if(!hasUploaded && !hasRaw){
-    setStatus('err','No data. Use Reset Karlsruhe template or upload files.'); return;
+    setStatus('err','No data. Use Reset MLpFEM template or upload files.'); return;
   }
   busy(true); setStatus('info','Sending data to model…');
   try{
@@ -786,7 +787,7 @@ async function runAnalysis(){
     setView('int', document.querySelectorAll('.cvb')[1]);
     showResults(data.parameters, hasUploaded
       ? 'Result · σ₃ = '+data.parameters.CellPressure+' kPa'
-      : 'Karlsruhe Fine Sand · 200 kPa');
+      : 'MLpFEM template · 200 kPa');
     setStatus('ok','✓ Done. Use PLAXIS script to simulate and compare curves.');
   }catch(e){ setStatus('err','Error: '+e.message); }
   finally{ busy(false); }
@@ -924,16 +925,24 @@ function exportTxt(){
   a.download='HS_parameters.txt';a.click();
 }
 
-function dlTemplates(){
-  [{name:'Triaxial test_q_eps1.txt',x:D.raw.q.x,y:D.raw.q.y},
-   {name:'Triaxial test_epsvol.txt',x:D.raw.v.x,y:D.raw.v.y},
-   {name:'Triaxial test_path.txt',  x:D.raw.p.x,y:D.raw.p.y},
-   {name:'Oedometer.txt',           x:D.raw.o.y,y:D.raw.o.x}
-  ].forEach(({name,x,y})=>{
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([x.map((xi,i)=>`${xi}\t${y[i]}`).join('\n')],{type:'text/plain'}));
-    a.download=name;a.click();
-  });
+async function dlTemplates(){
+  const zip = new JSZip();
+  const files = [
+    'MLpFEM_q_eps1.txt',
+    'MLpFEM_epsvol.txt',
+    'MLpFEM_path.txt',
+    'MLpFEM_Oedometer.txt'
+  ];
+  for (const fname of files) {
+    const resp = await fetch(`data/${fname}`);
+    const text = await resp.text();
+    zip.file(fname, text);
+  }
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'MLpFEM_templates.zip';
+  a.click();
 }
 
 function doCopy(id,btn){
