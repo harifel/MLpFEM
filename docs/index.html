@@ -417,6 +417,21 @@ let files={q:null,v:null,p:null,o:null};
 let rawData={q:null,v:null,p:null,o:null};
 let userInterp=null, previewInterp=null, userSim=null, lastRes=null;
 let view='raw',C={},chartsReady=false;
+const APPROVED_DEGREES={q:15,v:10,o:4};
+
+function hasUploadedLabData(){
+  return !!(files.q||files.v||files.p||files.o);
+}
+function isKarlsruheTemplateSelection(){
+  return !hasUploadedLabData() && document.getElementById('cp').value==='200';
+}
+function hasApprovedDegreesForBuiltinSim(){
+  const {q,v,o}=getDegrees();
+  return q===APPROVED_DEGREES.q && v===APPROVED_DEGREES.v && o===APPROVED_DEGREES.o;
+}
+function canUseBuiltinSim(){
+  return isKarlsruheTemplateSelection() && hasApprovedDegreesForBuiltinSim();
+}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function showTab(id,btn){
@@ -522,7 +537,9 @@ function mkDS(color,x,y,ptRad,dashed,ord){
 function drawAll(){
   if(!chartsReady)return;
   const showInt=view==='int'||view==='sim';
-  const showSim=view==='sim' && userSim!=null;  // only show sim if explicitly set
+  const builtinSim=canUseBuiltinSim()?D.sim:null;
+  const activeSim=userSim||builtinSim;
+  const showSim=view==='sim' && activeSim!=null;
 
   const rq=rawData.q||D.raw.q, rv=rawData.v||D.raw.v;
 
@@ -539,7 +556,7 @@ function drawAll(){
   const ip={ x: ipRaw.x.map(v => Math.abs(v)), y: ipRaw.y };
   const io=userInterp?.o || {x:ro.y, y:ro.x};
 
-  const simPx = userSim?.p?.x ? userSim.p.x.map(v => Math.abs(v)) : null;
+  const simPx = activeSim?.p?.x ? activeSim.p.x.map(v => Math.abs(v)) : null;
 
   function build(rx,ry,ix,iy,simX,simY){
     const s=[];
@@ -549,14 +566,14 @@ function drawAll(){
     return s;
   }
 
-  C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,userSim?.q?.x,userSim?.q?.y); C.q.update('none');
-  C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,userSim?.v?.x,userSim?.v?.y); C.v.update('none');
-  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,simPx,userSim?.p?.y); C.p.update('none');
+  C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,activeSim?.q?.x,activeSim?.q?.y); C.q.update('none');
+  C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,activeSim?.v?.x,activeSim?.v?.y); C.v.update('none');
+  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,simPx,activeSim?.p?.y); C.p.update('none');
   {
     const s=[];
     s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
     if(showInt) s.push(mkDS('#1a1a1a',io.x,io.y,0,false,2));
-    if(showSim && userSim?.o) s.push(mkDS('#3b5bdb',userSim.o.x,userSim.o.y,0,true,1));
+    if(showSim && activeSim?.o) s.push(mkDS('#3b5bdb',activeSim.o.x,activeSim.o.y,0,true,1));
     C.o.data.datasets=s; C.o.update('none');
   }
 
@@ -571,6 +588,9 @@ function setView(v,btn){
   document.querySelectorAll('.cvb').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   drawAll();
+  if(v==='sim' && !userSim && !canUseBuiltinSim()){
+    setStatus('info','Built-in ML simulation is only available for Karlsruhe template at degrees q=15, εvol=10, Oedo=4. For other data/degrees, upload your own simulation curves.');
+  }
 }
 
 // ── Default stats from D.int ─────────────────────────────────────────────────
