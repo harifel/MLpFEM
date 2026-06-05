@@ -405,6 +405,21 @@ let files={q:null,v:null,p:null,o:null};
 let rawData={q:null,v:null,p:null,o:null};
 let userInterp=null,userSim=null,lastRes=null;
 let view='raw',C={},chartsReady=false;
+const APPROVED_DEGREE_Q = 15;
+
+function hasUploadedLabData(){
+  return !!(files.q||files.v||files.p||files.o);
+}
+function isKarlsruheTemplateSelection(){
+  return !hasUploadedLabData() && document.getElementById('cp').value==='200';
+}
+function hasApprovedDegreesForBuiltinSim(){
+  const d=Math.max(4,Math.min(25,parseInt(document.getElementById('deg').value)||15));
+  return d===APPROVED_DEGREE_Q;
+}
+function canUseBuiltinSim(){
+  return isKarlsruheTemplateSelection() && hasApprovedDegreesForBuiltinSim();
+}
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 function showTab(id,btn){
@@ -501,14 +516,16 @@ function mkDS(color,x,y,ptRad,dashed,ord){
 function drawAll(){
   if(!chartsReady)return;
   const showInt=view==='int'||view==='sim';
-  const showSim=view==='sim';
+  const builtinSim=canUseBuiltinSim()?D.sim:null;
+  const activeSim=userSim||builtinSim;
+  const showSim=view==='sim' && !!activeSim;
 
   const rq=rawData.q||D.raw.q, rv=rawData.v||D.raw.v;
   const rp=rawData.p||D.raw.p, ro=rawData.o||D.raw.o;
   const iq=userInterp?.q||D.int.q, iv=userInterp?.v||D.int.v;
   const ip=userInterp?.p||D.int.p, io=userInterp?.o||D.int.o;
-  const sq=userSim?.q||D.sim.q,   sv=userSim?.v||D.sim.v;
-  const sp=userSim?.p||D.sim.p,   so=userSim?.o||D.sim.o;
+  const sq=activeSim?.q, sv=activeSim?.v;
+  const sp=activeSim?.p, so=activeSim?.o;
 
   function build(rx,ry,ix,iy,sx,sy){
     const s=[];
@@ -521,15 +538,15 @@ function drawAll(){
     return s;
   }
 
-  C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,sq.x,sq.y); C.q.update('none');
-  C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,sv.x,sv.y); C.v.update('none');
-  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,sp.x,sp.y); C.p.update('none');
+  C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,sq?.x,sq?.y); C.q.update('none');
+  C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,sv?.x,sv?.y); C.v.update('none');
+  C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,sp?.x,sp?.y); C.p.update('none');
   // oedo raw: stored x=sigma, y=eps → swap for plot x=eps, y=sigma
   {
     const s=[];
     s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
     if(showInt) s.push(mkDS('#1a1a1a',io.x,io.y,0,false,2));
-    if(showSim) s.push(mkDS('#3b5bdb',so.x,so.y,0,true,1));
+    if(showSim && so) s.push(mkDS('#3b5bdb',so.x,so.y,0,true,1));
     C.o.data.datasets=s; C.o.update('none');
   }
 
@@ -544,6 +561,9 @@ function setView(v,btn){
   document.querySelectorAll('.cvb').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
   drawAll();
+  if(v==='sim' && !userSim && !canUseBuiltinSim()){
+    setStatus('info','Built-in ML simulation is only available for Karlsruhe template at degree 15. For other data/degrees, upload your own simulation curves.');
+  }
 }
 
 // ── Stats helpers ─────────────────────────────────────────────────────────────
