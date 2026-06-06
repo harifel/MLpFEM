@@ -500,12 +500,13 @@ function switchTab(name) {
 
 // Show About tab by default on page load
 document.addEventListener('DOMContentLoaded', function() {
-  switchTab('analysis');
-  if (!chartsReady) {
+  switchTab('about');
+  if (!chartsReady && typeof Chart !== 'undefined') {
+    switchTab('analysis');
     initCharts();
     chartsReady = true;
+    switchTab('about');
   }
-  switchTab('about');
   updatePlaxisScript(KFS);
   loadKFSRawData().then(function() {
     if (rawData.q && rawData.v && rawData.o) runBrowserInterpolation();
