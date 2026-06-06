@@ -522,7 +522,7 @@ function switchTab(name) {
     requestAnimationFrame(function() {
       Object.values(C).forEach(function(chart) { chart.resize(); });
       drawAll();
-    });
+    }, 100);
   }
 }
 
