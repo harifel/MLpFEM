@@ -198,7 +198,8 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
   #panel-analysis.tab-panel.active{display:flex !important;flex-direction:column;height:auto;overflow-y:auto;padding:.65rem .5rem;gap:.5rem}
   .vbar{order:1}
   .charts-area{order:2;display:flex;flex-direction:column;height:auto;gap:.45rem}
-  .ch{min-height:220px;height:220px}
+  .ch{min-height:260px;height:260px;flex-shrink:0}
+  .chart-wrapper{position:relative;width:100%;height:210px !important;aspect-ratio:unset !important;flex:none}
   .params-col{order:3}
   .ctrl-col{order:4}
   .vbar{flex-wrap:wrap;gap:.25rem;background:transparent}
@@ -588,7 +589,7 @@ function mkC(id,xLbl,yLbl,revX,revY){
   return new Chart(document.getElementById(id).getContext('2d'),{
     type:'line',data:{datasets:[]},
     options:{
-      animation:false,responsive:true,maintainAspectRatio:true,
+      animation:false,responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{
         x:{type:'linear',reverse:revX,
