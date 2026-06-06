@@ -224,7 +224,7 @@ table{width:100%;min-width:340px}
 </div>
 
 <!-- ABOUT -->
-<div class="panel" id="p-about" style="display:block">
+<div class="panel tab-panel" id="p-about" style="display:block">
   <div class="about-wrap">
     <div class="about-sub-row">
       <span class="about-sub">TU Graz · Institute of Soil Mechanics, Foundation Engineering and Computational Geotechnics &amp; NGI</span>
@@ -266,7 +266,7 @@ table{width:100%;min-width:340px}
 </div>
 
 <!-- TOOL -->
-<div class="tool-layout" id="p-tool">
+<div class="tool-layout tab-panel" id="p-tool">
 
   <div class="vbar">
     <button class="cvb on" onclick="setView('raw',this)">Raw lab data</button>
@@ -379,7 +379,7 @@ table{width:100%;min-width:340px}
 </div><!-- tool-layout -->
 
 <!-- PLAXIS -->
-<div class="panel" id="p-plaxis">
+<div class="panel tab-panel" id="p-plaxis">
   <div class="plax-wrap">
     <p class="panel-lead">The parameter block below updates automatically when you identify parameters in the Analysis tool. Copy and run in PLAXIS 2D 2023.2. Export the four output files and upload back — the <em>+ ML simulation</em> view overlays them on your lab data.</p>
     <div class="code-wrap">
@@ -393,7 +393,7 @@ table{width:100%;min-width:340px}
 </div>
 
 <!-- CITE -->
-<div class="panel" id="p-cite">
+<div class="panel tab-panel" id="p-cite">
   <div class="cite-wrap">
     <div class="sh">APA</div>
     <div class="cbox">
@@ -475,8 +475,7 @@ function canUseBuiltinSim(){
 function showTab(id,btn){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
-  document.getElementById('p-tool').style.display='none';
+  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
   if(id==='tool'){
     document.getElementById('p-tool').style.display='grid';
     if(!chartsReady){
@@ -492,8 +491,7 @@ function showTab(id,btn){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
-  document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
-  document.getElementById('p-tool').style.display='none';
+  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
   document.getElementById('p-about').style.display='block';
   updatePlaxisScript(KFS);
   loadKFSRawData(); // pre-populate so degree slider works immediately
@@ -662,12 +660,31 @@ function setDefaultStats(){
 
 // ── Stats helpers ─────────────────────────────────────────────────────────────
 function r2rmse(yTrue, yPred) {
-  const n=yTrue.length, mean=yTrue.reduce((a,b)=>a+b,0)/n;
+  const n=yTrue.length;
+  if(!n) return {r2:1, rmse:0};
+  const mean=yTrue.reduce((a,b)=>a+b,0)/n;
   let ss=0,sr=0; for(let i=0;i<n;i++){ss+=(yTrue[i]-mean)**2;sr+=(yTrue[i]-yPred[i])**2;}
   return {r2: ss>0?1-sr/ss:1, rmse:Math.sqrt(sr/n)};
 }
 function evalStats(xArr,yArr,deg){
   const yH=polyFit(xArr,yArr,xArr,deg); return r2rmse(yArr,yH);
+}
+function evalOedoStats(sigArr, epsArr, deg){
+  const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
+  const sigL=sigArr.slice(0,minSigIdx+1), epsL=epsArr.slice(0,minSigIdx+1);
+  let sigU=sigArr.slice(minSigIdx), epsU=epsArr.slice(minSigIdx);
+  const ci=sigU.findIndex(s=>s>-50);
+  if(ci>0){sigU=sigU.slice(0,ci);epsU=epsU.slice(0,ci);}
+
+  const yTrue=[...sigL];
+  const yPred=[...polyFit(epsL,sigL,epsL,deg)];
+  if(sigU.length>1){
+    const sigUOnly=sigU.slice(1);
+    const epsUOnly=epsU.slice(1);
+    yTrue.push(...sigUOnly);
+    yPred.push(...polyFit(epsU,sigU,epsUOnly,deg));
+  }
+  return r2rmse(yTrue,yPred);
 }
 function setChartStat(id,text){
   const el=document.getElementById('stat-'+id); if(el) el.textContent=text;
@@ -763,9 +780,9 @@ async function runBrowserInterpolation() {
       o: data.curves.oedo
     };
 
-	const sq = statsFromCurve(rawData.q.x, rawData.q.y, userInterp.q.x, userInterp.q.y);
-	const sv = statsFromCurve(rawData.v.x, rawData.v.y, userInterp.v.x, userInterp.v.y);
-	const so = statsFromCurve(rawData.o.y, rawData.o.x, userInterp.o.x, userInterp.o.y);
+	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
+	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
+	const so = evalOedoStats(rawData.o.x, rawData.o.y, doo);
 
 	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
 	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
@@ -878,9 +895,9 @@ async function runAnalysis(){
 	  p:{ x:data.curves.path.x.map(v => -v), y:data.curves.path.y },
 	  o:data.curves.oedo
 	};
-	const sq = statsFromCurve(rawData.q.x, rawData.q.y, userInterp.q.x, userInterp.q.y);
-	const sv = statsFromCurve(rawData.v.x, rawData.v.y, userInterp.v.x, userInterp.v.y);
-	const so = statsFromCurve(rawData.o.y, rawData.o.x, userInterp.o.x, userInterp.o.y);
+	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
+	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
+	const so = evalOedoStats(rawData.o.x, rawData.o.y, doo);
 
 	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
 	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
