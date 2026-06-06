@@ -64,7 +64,6 @@ header{background:var(--card);border-bottom:1px solid var(--border);flex-shrink:
 
 /* ── TOOL ── */
 .tool-layout{
-  display:grid;
   height:calc(100vh - 46px - 37px);
   overflow:hidden;
   padding:.75rem .85rem;
@@ -196,7 +195,7 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
   .two-col{flex-direction:column}
   .steps{grid-template-columns:1fr 1fr}
   .fmt{grid-template-columns:1fr 1fr;max-width:100%}
-  .tool-layout.active{display:flex;flex-direction:column;height:auto;overflow-y:auto;padding:.65rem .5rem;gap:.5rem}
+  #panel-analysis.tab-panel.active{display:flex !important;flex-direction:column;height:auto;overflow-y:auto;padding:.65rem .5rem;gap:.5rem}
   .charts-area{display:flex;flex-direction:column;height:auto;gap:.45rem}
   .ch{min-height:220px}
   .vbar{flex-wrap:wrap;gap:.25rem}
@@ -216,7 +215,7 @@ table{width:100%;min-width:340px}
   border-bottom: 2px solid currentColor;
   font-weight: bold;
 }
-#panel-analysis.tab-panel.active{display:grid}
+#panel-analysis.tab-panel.active{display:grid !important}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -259,21 +258,39 @@ table{width:100%;min-width:340px}
     </div>
     <div style="font-family:'Courier New',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:.35rem">Input file format</div>
     <p style="font-size:.78rem;color:var(--mute);margin-bottom:.35rem">Tab-separated, no header. Strain in decimals (not %), compression negative.</p>
-    <div class="fmt">
-      <div class="fh">File</div><div class="fh">Column 0</div><div class="fh">Column 1</div>
-      <div class="fc m">Triaxial test_q_eps1.txt</div>
-      <div class="fc"><span class="s">ε</span><sub>1</sub> (–)</div>
-      <div class="fc"><span class="s">q</span> (kPa)</div>
-      <div class="fc m">Triaxial test_epsvol.txt</div>
-      <div class="fc"><span class="s">ε</span><sub>1</sub> (–)</div>
-      <div class="fc"><span class="s">ε</span><sub>vol</sub> (–)</div>
-      <div class="fc m">Triaxial test_path.txt</div>
-      <div class="fc"><span class="s">p</span>′ (kPa)</div>
-      <div class="fc"><span class="s">q</span> (kPa)</div>
-      <div class="fc m">Oedometer.txt</div>
-      <div class="fc"><span class="s">ε</span><sub>1</sub> (–)</div>
-      <div class="fc"><span class="s">σ</span><sub>1</sub>′ (kPa)</div>
-    </div>
+    <div style="overflow-x:auto;max-width:580px;margin:.5rem auto .6rem">
+          <table style="width:100%;border-collapse:collapse;min-width:340px">
+            <thead>
+              <tr>
+                <th style="background:var(--ink);color:#fff;padding:.3rem .7rem;font-family:'Courier New',monospace;font-size:.58rem;letter-spacing:.07em;text-align:left;white-space:nowrap">File</th>
+                <th style="background:var(--ink);color:#fff;padding:.3rem .7rem;font-family:'Courier New',monospace;font-size:.58rem;letter-spacing:.07em;text-align:left;white-space:nowrap">Column 0</th>
+                <th style="background:var(--ink);color:#fff;padding:.3rem .7rem;font-family:'Courier New',monospace;font-size:.58rem;letter-spacing:.07em;text-align:left;white-space:nowrap">Column 1</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-family:'Courier New',monospace;font-size:.67rem;color:var(--blue)">MLpFEM_q_eps1.txt</td>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-size:.78rem"><span class="s">ε</span><sub>1</sub> (–)</td>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-size:.78rem"><span class="s">q</span> (kPa)</td>
+              </tr>
+              <tr>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-family:'Courier New',monospace;font-size:.67rem;color:var(--blue)">MLpFEM_epsvol.txt</td>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-size:.78rem"><span class="s">ε</span><sub>1</sub> (–)</td>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-size:.78rem"><span class="s">ε</span><sub>vol</sub> (–)</td>
+              </tr>
+              <tr>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-family:'Courier New',monospace;font-size:.67rem;color:var(--blue)">MLpFEM_path.txt</td>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-size:.78rem"><span class="s">p</span>′ (kPa)</td>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-size:.78rem"><span class="s">q</span> (kPa)</td>
+              </tr>
+              <tr>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-family:'Courier New',monospace;font-size:.67rem;color:var(--blue)">MLpFEM_Oedometer.txt</td>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-size:.78rem"><span class="s">ε</span><sub>1</sub> (–)</td>
+                <td style="padding:.34rem .7rem;border:1px solid var(--border);background:var(--card);font-size:.78rem"><span class="s">σ</span><sub>1</sub>′ (kPa)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
     <p style="font-size:.75rem;color:var(--mute)">Download MLpFEM template files from the Analysis tool tab.</p>
   </div>
 </div>
