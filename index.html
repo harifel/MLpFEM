@@ -224,7 +224,7 @@ table{width:100%;min-width:340px}
 </div>
 
 <!-- ABOUT -->
-<div class="panel" id="p-about" style="display:block">
+<div class="panel tab-panel" id="p-about" style="display:block">
   <div class="about-wrap">
     <div class="about-sub-row">
       <span class="about-sub">TU Graz · Institute of Soil Mechanics, Foundation Engineering and Computational Geotechnics &amp; NGI</span>
@@ -266,7 +266,7 @@ table{width:100%;min-width:340px}
 </div>
 
 <!-- TOOL -->
-<div class="tool-layout" id="p-tool">
+<div class="tool-layout tab-panel" id="p-tool">
 
   <div class="vbar">
     <button class="cvb on" onclick="setView('raw',this)">Raw lab data</button>
@@ -367,7 +367,7 @@ table{width:100%;min-width:340px}
 </div><!-- tool-layout -->
 
 <!-- PLAXIS -->
-<div class="panel" id="p-plaxis">
+<div class="panel tab-panel" id="p-plaxis">
   <div class="plax-wrap">
     <p class="panel-lead">The parameter block below updates automatically when you identify parameters in the Analysis tool. Copy and run in PLAXIS 2D 2023.2. Export the four output files and upload back — the <em>+ ML simulation</em> view overlays them on your lab data.</p>
     <div class="code-wrap">
@@ -381,7 +381,7 @@ table{width:100%;min-width:340px}
 </div>
 
 <!-- CITE -->
-<div class="panel" id="p-cite">
+<div class="panel tab-panel" id="p-cite">
   <div class="cite-wrap">
     <div class="sh">APA</div>
     <div class="cbox">
@@ -463,8 +463,7 @@ function canUseBuiltinSim(){
 function showTab(id,btn){
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
-  document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
-  document.getElementById('p-tool').style.display='none';
+  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
   if(id==='tool'){
     document.getElementById('p-tool').style.display='grid';
     if(!chartsReady){initCharts();chartsReady=true;}
@@ -476,8 +475,7 @@ function showTab(id,btn){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
-  document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
-  document.getElementById('p-tool').style.display='none';
+  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
   document.getElementById('p-about').style.display='block';
   updatePlaxisScript(KFS);
   loadKFSRawData(); // pre-populate so degree slider works immediately
@@ -629,12 +627,31 @@ function setView(v,btn){
 
 // ── Stats helpers ─────────────────────────────────────────────────────────────
 function r2rmse(yTrue, yPred) {
-  const n=yTrue.length, mean=yTrue.reduce((a,b)=>a+b,0)/n;
+  const n=yTrue.length;
+  if(!n) return {r2:1, rmse:0};
+  const mean=yTrue.reduce((a,b)=>a+b,0)/n;
   let ss=0,sr=0; for(let i=0;i<n;i++){ss+=(yTrue[i]-mean)**2;sr+=(yTrue[i]-yPred[i])**2;}
   return {r2: ss>0?1-sr/ss:1, rmse:Math.sqrt(sr/n)};
 }
 function evalStats(xArr,yArr,deg){
   const yH=polyFit(xArr,yArr,xArr,deg); return r2rmse(yArr,yH);
+}
+function evalOedoStats(sigArr, epsArr, deg){
+  const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
+  const sigL=sigArr.slice(0,minSigIdx+1), epsL=epsArr.slice(0,minSigIdx+1);
+  let sigU=sigArr.slice(minSigIdx), epsU=epsArr.slice(minSigIdx);
+  const ci=sigU.findIndex(s=>s>-50);
+  if(ci>0){sigU=sigU.slice(0,ci);epsU=epsU.slice(0,ci);}
+
+  const yTrue=[...sigL];
+  const yPred=[...polyFit(epsL,sigL,epsL,deg)];
+  if(sigU.length>1){
+    const sigUOnly=sigU.slice(1);
+    const epsUOnly=epsU.slice(1);
+    yTrue.push(...sigUOnly);
+    yPred.push(...polyFit(epsU,sigU,epsUOnly,deg));
+  }
+  return r2rmse(yTrue,yPred);
 }
 function setChartStat(id,text){
   const el=document.getElementById('stat-'+id); if(el) el.textContent=text;
@@ -706,10 +723,8 @@ function runBrowserInterpolation() {
   const gL=Array.from({length:375},(_,i)=>0+i*minEL/374);
   const gU=Array.from({length:375},(_,i)=>minEL+i*(maxEU-minEL)/374);
   const sLI=polyFit(epsL,sigL,gL,4), sUI=polyFit(epsU,sigU,gU,4);
-  const st1=r2rmse(sigL,polyFit(epsL,sigL,epsL,4));
-  const st2=r2rmse(sigU,polyFit(epsU,sigU,epsU,4));
-  const r2o=(st1.r2+st2.r2)/2, rmseo=(st1.rmse+st2.rmse)/2;
-  setChartStat('o',`R²=${r2o.toFixed(4)}  RMSE=${rmseo.toFixed(1)} kPa  (deg=4)`);
+  const soS=evalOedoStats(sigArr,epsArr,4);
+  setChartStat('o',`R²=${soS.r2.toFixed(4)}  RMSE=${soS.rmse.toFixed(1)} kPa  (deg=4)`);
 
   userInterp={
     q:{x:x_syn,            y:qI},
