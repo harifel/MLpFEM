@@ -519,10 +519,11 @@ function switchTab(name) {
   var link = document.querySelector('[data-tab="' + name + '"]');
   if (link) link.classList.add('active');
   if (name === 'analysis' && chartsReady) {
-    requestAnimationFrame(function() {
+    setTimeout(function() {
       Object.values(C).forEach(function(chart) { chart.resize(); });
       drawAll();
     }, 100);
+  }
   }
 }
 
