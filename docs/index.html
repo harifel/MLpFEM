@@ -93,7 +93,7 @@ header{background:var(--card);border-bottom:1px solid var(--border);flex-shrink:
   padding:.55rem .65rem .4rem;display:flex;flex-direction:column;min-height:0}
 .ch.triax{background:var(--triax-bg);border-color:var(--triax-border)}
 .ch.oedo{background:var(--oedo-bg);border-color:var(--oedo-border)}
-.chart-wrapper{position:relative;width:100%;aspect-ratio:4 / 3;flex:1;min-height:0}
+.chart-wrapper{position:relative;width:100%;aspect-ratio:4 / 3;flex:1;min-height:180px}
 .chart-wrapper canvas{position:absolute;top:0;left:0;width:100% !important;height:100% !important}
 .ch-stat{font-family:'Courier New',monospace;font-size:.58rem;color:var(--mute);
   text-align:right;flex-shrink:0;height:14px;line-height:14px;margin-bottom:1px}
@@ -201,7 +201,8 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
   .vbar{flex-wrap:wrap;gap:.25rem;background:transparent}
   .params-col,.ctrl-col{overflow-y:visible;max-height:none}
   .ugrid{grid-template-columns:1fr}
-  .btn,input[type="file"]{width:100%;max-width:100%}   .cvb{width:auto !important;max-width:none !important}
+  .btn,input[type="file"]{width:100%;max-width:100%}
+  .cvb{width:auto !important;max-width:none !important}
 }
 .table-wrap{overflow-x:auto}
 table{width:100%;min-width:340px}
@@ -1081,30 +1082,26 @@ function exportTxt(){
 }
 
 async function dlTemplates(){
-  try {
-    const zip = new JSZip();
-    const files = [
-      'data/MLpFEM_q_eps1.txt',
-      'data/MLpFEM_epsvol.txt',
-      'data/MLpFEM_path.txt',
-      'data/MLpFEM_Oedometer.txt'
-    ];
-    for (const path of files) {
-      const resp = await fetch(path);
-      if(!resp.ok) throw new Error('File not found: ' + path);
-      const text = await resp.text();
-      zip.file(path.split('/').pop(), text);
-    }
-    const blob = await zip.generateAsync({ type: 'blob' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'MLpFEM_templates.zip';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } catch(err) {
-    alert('Download failed: ' + err.message);
-  }
+ try {
+   const zip = new JSZip();
+   const q = D.raw.q.x.map((x,i) => `${(x*-100).toFixed(6)}\t${D.raw.q.y[i].toFixed(6)}`).join('\n');
+   const v = D.raw.v.x.map((x,i) => `${(x*-100).toFixed(6)}\t${(D.raw.v.y[i]*-100).toFixed(6)}`).join('\n');
+   const p = D.raw.p.x.map((x,i) => `${(x*-1).toFixed(6)}\t${D.raw.p.y[i].toFixed(6)}`).join('\n');
+   const o = D.raw.o.x.map((x,i) => `${(x*-1).toFixed(6)}\t${(D.raw.o.y[i]*-100).toFixed(6)}`).join('\n');
+   zip.file('MLpFEM_q_eps1.txt', q);
+   zip.file('MLpFEM_epsvol.txt', v);
+   zip.file('MLpFEM_path.txt', p);
+   zip.file('MLpFEM_Oedometer.txt', o);
+   const blob = await zip.generateAsync({ type: 'blob' });
+   const a = document.createElement('a');
+   a.href = URL.createObjectURL(blob);
+   a.download = 'MLpFEM_templates.zip';
+   document.body.appendChild(a);
+   a.click();
+   document.body.removeChild(a);
+ } catch(err) {
+   alert('Download failed: ' + err.message);
+ }
 }
 
 function doCopy(id,btn){
