@@ -516,13 +516,12 @@ function switchTab(name) {
   document.getElementById('panel-' + name).classList.add('active');
   var link = document.querySelector('[data-tab="' + name + '"]');
   if (link) link.classList.add('active');
-  if (name === 'analysis' && chartsReady) {
-    requestAnimationFrame(function() {
-      requestAnimationFrame(function() {
-        Object.values(C).forEach(function(chart) { chart.resize(); });
-        drawAll();
-      });
-    });
+  if (name === 'analysis') {
+    Object.values(C).forEach(function(chart) { chart.destroy(); });
+    C = {};
+    chartsReady = false;
+    initCharts();
+    chartsReady = true;
   }
 }
 
