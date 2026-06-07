@@ -221,7 +221,7 @@ table{width:100%;min-width:340px}
   border-bottom: 2px solid currentColor;
   font-weight: bold;
 }
-.tool-layout{opacity:0;pointer-events:none;position:fixed;top:-9999px;left:-9999px} #panel-analysis.tab-panel.active{opacity:1;pointer-events:auto;position:static;display:grid !important} 
+.tool-layout{display:none} #panel-analysis.tab-panel.active{display:grid !important}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -523,9 +523,11 @@ function switchTab(name) {
       C = {};
       chartsReady = false;
     }
-    initCharts();
-    chartsReady = true;
-    if (rawData.q && rawData.v) drawAll();
+    setTimeout(function() {
+      initCharts();
+      chartsReady = true;
+      if (rawData.q && rawData.v) drawAll();
+    }, 50);
   }
 }
 
