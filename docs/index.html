@@ -608,15 +608,23 @@ function mkC(id,xLbl,yLbl,revX,revY){
 }
 
 function initCharts(){
+  ['ch-q','ch-v','ch-o','ch-p'].forEach(function(id) {
+    var canvas = document.getElementById(id);
+    var wrapper = canvas.parentElement;
+    var w = wrapper.offsetWidth || 300;
+    var h = wrapper.offsetHeight || 210;
+    if (h < 10) h = 210;
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+  });
   C.q = mkC('ch-q','ε₁ (–)','q (kPa)',    true,  false);
   C.v = mkC('ch-v','ε₁ (–)','εᵥ (–)',    true,  false);
   C.o = mkC('ch-o','ε₁ (–)',"σ₁' (kPa)", true,  true);
   C.p = mkC('ch-p',"p' (kPa)",'q (kPa)', false, false);
-  // Double rAF: first frame shows the grid, second frame charts have real pixel size
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    drawAll();
-    setDefaultStats();
-  }));
+  drawAll();
+  setDefaultStats();
 }
 
 // Draw order in Chart.js: LOWER order number = drawn ON TOP (rendered last)
