@@ -221,6 +221,16 @@ table{width:100%;min-width:340px}
   border-bottom: 2px solid currentColor;
   font-weight: bold;
 }
+@media(max-width:768px) and (orientation:landscape){
+  #panel-analysis.tab-panel.active{display:grid !important;flex-direction:unset;height:calc(100vh - 46px - 37px);overflow:hidden}
+  .charts-area{order:unset;display:grid !important;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;height:auto}
+  .ch{min-height:0;height:auto}
+  .chart-wrapper{height:150px !important}
+  .chart-wrapper canvas{height:150px !important}
+  .params-col{order:unset;overflow-y:auto;max-height:calc(100vh - 83px)}
+  .ctrl-col{order:unset;overflow-y:auto;max-height:calc(100vh - 83px)}
+  .vbar{order:unset}
+}
 .tool-layout{display:none} #panel-analysis.tab-panel.active{display:grid}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
