@@ -199,7 +199,8 @@ sub,sup{font-size:.68em;font-style:normal;font-family:Arial,sans-serif}
   .vbar{order:1}
   .charts-area{order:2;display:flex;flex-direction:column;height:auto;gap:.45rem}
   .ch{min-height:260px;height:260px;flex-shrink:0}
-  .chart-wrapper{position:relative;width:100%;height:210px !important;aspect-ratio:unset !important;flex:none}
+  .chart-wrapper{position:relative;width:100%;height:210px !important;aspect-ratio:unset !important;flex:none;display:block}
+  .chart-wrapper canvas{position:absolute;top:0;left:0;width:100%!important;height:210px!important} 
   .params-col{order:3}
   .ctrl-col{order:4}
   .vbar{flex-wrap:wrap;gap:.25rem;background:transparent}
