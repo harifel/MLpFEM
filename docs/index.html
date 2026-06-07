@@ -517,11 +517,14 @@ function switchTab(name) {
   var link = document.querySelector('[data-tab="' + name + '"]');
   if (link) link.classList.add('active');
   if (name === 'analysis') {
-    Object.values(C).forEach(function(chart) { chart.destroy(); });
-    C = {};
-    chartsReady = false;
+    if (chartsReady) {
+      Object.values(C).forEach(function(chart) { chart.destroy(); });
+      C = {};
+      chartsReady = false;
+    }
     initCharts();
     chartsReady = true;
+    if (rawData.q && rawData.v) drawAll();
   }
 }
 
