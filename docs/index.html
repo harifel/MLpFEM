@@ -401,9 +401,37 @@ table{width:100%;min-width:340px}
         </button>
         <button class="btn bo" onclick="resetKFS()">Reset MLpFEM template</button>
         <button class="btn bo" onclick="dlTemplates()">Download template files ↓</button>
+        <button class="btn bo" onclick="dlInterpolated()">Download interpolated curves ↓</button>
         <button class="btn be" id="exp-btn" style="display:none" onclick="exportTxt()">Export for PLAXIS ↓</button>
       </div>
       <div class="tstatus" id="status"></div>
+    </div>
+    <div class="ctrl-card">
+      <div class="card-hd">Upload ML simulation</div>
+      <div style="font-size:.62rem;color:var(--muted);margin-bottom:.45rem">Run PLAXIS script → export 4 files → upload here to overlay on lab data.</div>
+      <div class="ugrid">
+        <div class="uc" id="uc-sq" onclick="document.getElementById('fi-sq').click()">
+          <div class="ul"><span class="s">q</span> – <span class="s">ε</span><sub>1</sub></div>
+          <div class="un" id="un-sq">q_eps1.txt</div>
+          <input type="file" id="fi-sq" accept=".txt,.dat,.csv" style="display:none" onchange="gotSimFile('q',this)"/>
+        </div>
+        <div class="uc" id="uc-sv" onclick="document.getElementById('fi-sv').click()">
+          <div class="ul"><span class="s">ε</span><sub>vol</sub> – <span class="s">ε</span><sub>1</sub></div>
+          <div class="un" id="un-sv">epsvol.txt</div>
+          <input type="file" id="fi-sv" accept=".txt,.dat,.csv" style="display:none" onchange="gotSimFile('v',this)"/>
+        </div>
+        <div class="uc" id="uc-sp" onclick="document.getElementById('fi-sp').click()">
+          <div class="ul"><span class="s">p</span>′ – <span class="s">q</span></div>
+          <div class="un" id="un-sp">path.txt</div>
+          <input type="file" id="fi-sp" accept=".txt,.dat,.csv" style="display:none" onchange="gotSimFile('p',this)"/>
+        </div>
+        <div class="uc" id="uc-so" onclick="document.getElementById('fi-so').click()">
+          <div class="ul"><span class="s">σ</span><sub>1</sub>′ – <span class="s">ε</span><sub>1</sub></div>
+          <div class="un" id="un-so">Oedometer.txt</div>
+          <input type="file" id="fi-so" accept=".txt,.dat,.csv" style="display:none" onchange="gotSimFile('o',this)"/>
+        </div>
+      </div>
+      <button class="btn bo" id="clear-sim-btn" style="display:none" onclick="clearSim()">Clear simulation ✕</button>
     </div>
     <div class="ctrl-card">
       <div class="card-hd">Training range</div>
@@ -1152,6 +1180,61 @@ function copyCode(){
   navigator.clipboard.writeText(document.getElementById('plaxis-code').innerText).then(()=>{
     b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',1500);
   });
+}
+function gotSimFile(k, inp){
+  const f=inp.files[0]; if(!f) return;
+  document.getElementById('un-s'+k).textContent='✓ '+f.name;
+  document.getElementById('un-s'+k).classList.add('ok');
+  document.getElementById('uc-s'+k).classList.add('done');
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const xs=[],ys=[];
+    e.target.result.trim().split('\n').forEach(l=>{
+      const p=l.trim().split(/\t|,|;|\s+/);
+      if(p.length>=2){const x=parseFloat(p[0]),y=parseFloat(p[1]);if(!isNaN(x)&&!isNaN(y)){xs.push(x);ys.push(y);}}
+    });
+    if(!userSim) userSim={q:null,v:null,p:null,o:null};
+    if(k==='q') userSim.q={x:xs.map(v=>v*(1/100*(-1))), y:ys};
+    if(k==='v') userSim.v={x:xs.map(v=>v*(1/100*(-1))), y:ys.map(v=>v*(-1/100))};
+    if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
+    if(k==='o') userSim.o={x:xs, y:ys};
+    document.getElementById('clear-sim-btn').style.display='block';
+    if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
+      setView('sim',document.querySelectorAll('.cvb')[2]);
+      setStatus('ok','✓ ML simulation loaded. Showing overlay.');
+    } else { drawAll(); }
+  };
+  reader.readAsText(f);
+}
+
+function clearSim(){
+  userSim=null;
+  const labels={q:'q_eps1.txt',v:'epsvol.txt',p:'path.txt',o:'Oedometer.txt'};
+  ['q','v','p','o'].forEach(k=>{
+    const n=document.getElementById('un-s'+k);
+    n.textContent=labels[k]; n.classList.remove('ok');
+    document.getElementById('uc-s'+k).classList.remove('done');
+    document.getElementById('fi-s'+k).value='';
+  });
+  document.getElementById('clear-sim-btn').style.display='none';
+  if(view==='sim') setView('int',document.querySelectorAll('.cvb')[1]);
+  else drawAll();
+}
+
+async function dlInterpolated(){
+  if(!userInterp){ setStatus('err','No interpolated curves yet. Run interpolation first.'); return; }
+  try{
+    const zip=new JSZip();
+    const fmt=(x,y)=>x.map((v,i)=>`${v.toFixed(8)}\t${y[i].toFixed(8)}`).join('\n');
+    zip.file('interp_q_eps1.txt',   fmt(userInterp.q.x, userInterp.q.y));
+    zip.file('interp_epsvol.txt',   fmt(userInterp.v.x, userInterp.v.y));
+    zip.file('interp_path.txt',     fmt(userInterp.p.x.map(v=>-v), userInterp.p.y));
+    zip.file('interp_Oedometer.txt',fmt(userInterp.o.x, userInterp.o.y));
+    const blob=await zip.generateAsync({type:'blob'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='MLpFEM_interpolated.zip';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }catch(e){ setStatus('err','Download failed: '+e.message); }
 }
 </script>
 </body>
