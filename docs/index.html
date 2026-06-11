@@ -616,11 +616,12 @@ async function loadKFSRawData(){
     );
     rawData = Object.fromEntries(loaded);
   }catch{
+    // D.raw.o stores x=σ, y=ε; swap to match file format convention x=ε, y=σ
     rawData = {
       q: {x:[...D.raw.q.x], y:[...D.raw.q.y]},
       v: {x:[...D.raw.v.x], y:[...D.raw.v.y]},
       p: {x:[...D.raw.p.x], y:[...D.raw.p.y]},
-      o: {x:[...D.raw.o.x], y:[...D.raw.o.y]},
+      o: {x:[...D.raw.o.y], y:[...D.raw.o.x]},
     };
   }
   // Set userInterp from the saved interpolated files (sklearn 1.2.2).
@@ -708,14 +709,16 @@ function drawAll(){
   const rpSrc = rawData.p || D.raw.p;
   const rp = { x: rpSrc.x.map(v => Math.abs(v)), y: rpSrc.y };
 
-  const ro=rawData.o||D.raw.o;
+  // oedo: ensure x=ε₁, y=σ₁' regardless of source
+  const roSrc=rawData.o||{x:[...D.raw.o.y], y:[...D.raw.o.x]};
+  const ro=roSrc;
 
   // Do not force D.int as default interpolation; use raw unless backend interp is available
   const iq=userInterp?.q || rq;
   const iv=userInterp?.v || rv;
   const ipRaw=userInterp?.p || rp;
   const ip={ x: ipRaw.x.map(v => Math.abs(v)), y: ipRaw.y };
-  const io=userInterp?.o || {x:ro.y, y:ro.x};
+  const io=userInterp?.o || ro;
 
   const simPx = activeSim?.p?.x ? activeSim.p.x.map(v => Math.abs(v)) : null;
 
@@ -732,7 +735,7 @@ function drawAll(){
   C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,simPx,activeSim?.p?.y); C.p.update('none');
   {
     const s=[];
-    s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
+    s.push(mkDS('#c8c5c0',ro.x,ro.y,2,false,3));
     if(showInt) s.push(mkDS('#1a1a1a',io.x,io.y,0,false,2));
     if(showSim && activeSim?.o) s.push(mkDS('#3b5bdb',activeSim.o.x,activeSim.o.y,0,true,1));
     C.o.data.datasets=s; C.o.update('none');
@@ -883,7 +886,7 @@ async function runBrowserInterpolation() {
 
 	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
 	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
-	const so = evalOedoStats(rawData.o.x, rawData.o.y, doo);
+	const so = evalOedoStats(rawData.o.y, rawData.o.x, doo);
 
 	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
 	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
@@ -958,8 +961,8 @@ function rawDataToBlob(key) {
     // x = p′*(-1) back to positive kPa, y = q kPa unchanged
     rows = d.x.map((v,i)=>`${(v*(-1)).toFixed(6)}\t${d.y[i].toFixed(6)}`).join('\n');
   } else {
-    // x = σ*(-1) back to positive kPa, y = ε*(-100) back to positive %
-    rows = d.x.map((v,i)=>`${(v*(-1)).toFixed(6)}\t${(d.y[i]*(-100)).toFixed(6)}`).join('\n');
+    // oedo: x=ε₁ (neg fraction), y=σ₁' (neg kPa) — already in file format
+    rows = d.x.map((v,i)=>`${v.toFixed(6)}\t${d.y[i].toFixed(6)}`).join('\n');
   }
   return new Blob([rows], {type:'text/plain'});
 }
@@ -998,7 +1001,7 @@ async function runAnalysis(){
 	};
 	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
 	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
-	const so = evalOedoStats(rawData.o.x, rawData.o.y, doo);
+	const so = evalOedoStats(rawData.o.y, rawData.o.x, doo);
 
 	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
 	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
@@ -1153,7 +1156,7 @@ async function dlTemplates(){
    const q = D.raw.q.x.map((x,i) => `${(x*-100).toFixed(6)}\t${D.raw.q.y[i].toFixed(6)}`).join('\n');
    const v = D.raw.v.x.map((x,i) => `${(x*-100).toFixed(6)}\t${(D.raw.v.y[i]*-100).toFixed(6)}`).join('\n');
    const p = D.raw.p.x.map((x,i) => `${(x*-1).toFixed(6)}\t${D.raw.p.y[i].toFixed(6)}`).join('\n');
-   const o = D.raw.o.x.map((x,i) => `${(x*-1).toFixed(6)}\t${(D.raw.o.y[i]*-100).toFixed(6)}`).join('\n');
+   const o = D.raw.o.y.map((v,i) => `${v.toFixed(6)}\t${D.raw.o.x[i].toFixed(6)}`).join('\n');
    zip.file('MLpFEM_q_eps1.txt', q);
    zip.file('MLpFEM_epsvol.txt', v);
    zip.file('MLpFEM_path.txt', p);

@@ -558,11 +558,12 @@ async function loadKFSRawData(){
     rawData = Object.fromEntries(loaded);
   }catch{
     // Fallback to embedded data if fetching templates fails.
+    // D.raw.o stores x=σ, y=ε; swap to match file format convention x=ε, y=σ
     rawData = {
       q: {x:[...D.raw.q.x], y:[...D.raw.q.y]},
       v: {x:[...D.raw.v.x], y:[...D.raw.v.y]},
       p: {x:[...D.raw.p.x], y:[...D.raw.p.y]},
-      o: {x:[...D.raw.o.x], y:[...D.raw.o.y]},
+      o: {x:[...D.raw.o.y], y:[...D.raw.o.x]},
     };
   }
   // Mark upload cards as pre-loaded
@@ -650,10 +651,10 @@ function drawAll(){
   C.q.data.datasets=build(rq.x,rq.y,iq.x,iq.y,sq?.x,sq?.y); C.q.update('none');
   C.v.data.datasets=build(rv.x,rv.y,iv.x,iv.y,sv?.x,sv?.y); C.v.update('none');
   C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,sp?.x,sp?.y); C.p.update('none');
-  // oedo raw: stored x=sigma, y=eps → swap for plot x=eps, y=sigma
+  // oedo: x=ε₁ (chart x-axis), y=σ₁' (chart y-axis)
   {
     const s=[];
-    s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
+    s.push(mkDS('#c8c5c0',ro.x,ro.y,2,false,3));
     if(showInt) s.push(mkDS('#1a1a1a',io.x,io.y,0,false,2));
     if(showSim && so) s.push(mkDS('#3b5bdb',so.x,so.y,0,true,1));
     C.o.data.datasets=s; C.o.update('none');
@@ -763,7 +764,7 @@ function runBrowserInterpolation() {
   setChartStat('p','linspace only (no fit)');
 
   // ── Oedometer (degree=4, fixed) ───────────────────────────────────────────
-  const sigArr=rawData.o.x, epsArr=rawData.o.y;
+  const epsArr=rawData.o.x, sigArr=rawData.o.y;
   const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
   const sigL=sigArr.slice(0,minSigIdx+1), epsL=epsArr.slice(0,minSigIdx+1);
   let sigU=sigArr.slice(minSigIdx), epsU=epsArr.slice(minSigIdx);
@@ -846,8 +847,8 @@ function rawDataToBlob(key) {
     // x = p′*(-1) back to positive kPa, y = q kPa unchanged
     rows = d.x.map((v,i)=>`${(v*(-1)).toFixed(6)}\t${d.y[i].toFixed(6)}`).join('\n');
   } else {
-    // x = σ*(-1) back to positive kPa, y = ε*(-100) back to positive %
-    rows = d.x.map((v,i)=>`${(v*(-1)).toFixed(6)}\t${(d.y[i]*(-100)).toFixed(6)}`).join('\n');
+    // oedo: x=ε₁ (neg fraction), y=σ₁' (neg kPa) — already in file format
+    rows = d.x.map((v,i)=>`${v.toFixed(6)}\t${d.y[i].toFixed(6)}`).join('\n');
   }
   return new Blob([rows], {type:'text/plain'});
 }
@@ -1025,7 +1026,7 @@ async function dlTemplates(){
    const q = D.raw.q.x.map((x,i) => `${(x*-100).toFixed(6)}\t${D.raw.q.y[i].toFixed(6)}`).join('\n');
    const v = D.raw.v.x.map((x,i) => `${(x*-100).toFixed(6)}\t${(D.raw.v.y[i]*-100).toFixed(6)}`).join('\n');
    const p = D.raw.p.x.map((x,i) => `${(x*-1).toFixed(6)}\t${D.raw.p.y[i].toFixed(6)}`).join('\n');
-   const o = D.raw.o.x.map((x,i) => `${(x*-1).toFixed(6)}\t${(D.raw.o.y[i]*-100).toFixed(6)}`).join('\n');
+   const o = D.raw.o.y.map((v,i) => `${v.toFixed(6)}\t${D.raw.o.x[i].toFixed(6)}`).join('\n');
    zip.file('MLpFEM_q_eps1.txt', q);
    zip.file('MLpFEM_epsvol.txt', v);
    zip.file('MLpFEM_path.txt', p);
