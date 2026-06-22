@@ -715,13 +715,13 @@ function drawAll(){
   const iv=userInterp?.v || rv;
   const ipRaw=userInterp?.p || rp;
   const ip={ x: ipRaw.x.map(v => Math.abs(v)), y: ipRaw.y };
-  const io=userInterp?.o || {x:ro.y, y:ro.x};
+  const io=userInterp?.o || {x:ro.x, y:ro.y};
 
   const simPx = activeSim?.p?.x ? activeSim.p.x.map(v => Math.abs(v)) : null;
 
   function build(rx,ry,ix,iy,simX,simY){
     const s=[];
-    s.push(mkDS('#c8c5c0',rx,ry,2,false,3));
+    s.push(mkDS('#c8c5c0', ro.x, ro.y, 2, false, 3));
     if(showInt) s.push(mkDS('#1a1a1a',ix,iy,0,false,2));
     if(showSim && simX && simY) s.push(mkDS('#3b5bdb',simX,simY,0,true,1));
     return s;
@@ -1003,7 +1003,7 @@ async function runAnalysis(){
 	  q:data.curves.q_eps1,
 	  v:data.curves.epsvol,
 	  p:{ x:data.curves.path.x.map(v => -v), y:data.curves.path.y },
-	  o:data.curves.oedo
+	  o: { x: data.curves.oedo.y, y: data.curves.oedo.x }
 	};
 	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
 	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
