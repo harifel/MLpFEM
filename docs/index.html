@@ -1011,7 +1011,7 @@ async function runAnalysis(){
 	  q:data.curves.q_eps1,
 	  v:data.curves.epsvol,
 	  p:{ x:data.curves.path.x.map(v => -v), y:data.curves.path.y },
-	  o: { x: data.curves.oedo.x, y: data.curves.oedo.y }
+	  o: { x: data.curves.oedo.y, y: data.curves.oedo.x }
 	};
 	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
 	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
