@@ -1207,7 +1207,7 @@ function gotSimFile(k, inp){
     if(k==='v') userSim.v={x:xs.map(v=>v*(1/100*(-1))), y:ys.map(v=>v*(-1/100))};
     if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
     if(k==='o') userSim.o={
-  		x: xs.map(v => v / 100),   // epsoed % → decimal, keeps sign
+  		x: xs,   // col0 = ε₁ (negative decimal) — already correct
   		y: ys                        // sig1 kPa, already negative
 	};
     document.getElementById('clear-sim-btn').style.display='block';
