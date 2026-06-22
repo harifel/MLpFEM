@@ -1215,7 +1215,10 @@ function gotSimFile(k, inp){
     if(k==='v') userSim.v={x:xs.map(v=>v*(1/100*(-1))), y:ys.map(v=>v*(-1/100))};
     if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
 	// No conversion needed — already negative:
-	if(k==='o') userSim.o = { x: xs, y: ys };
+	if(k==='o') userSim.o = {
+	  x: ys.map(v => v / (-100)),   // col1 = ε₁ % → negative decimal
+	  y: xs.map(v => -v)             // col0 = σ₁' kPa positive → negative kPa
+	};
 	console.log('userSim.o x[0..2]:', userSim.o.x.slice(0,3), 'y[0..2]:', userSim.o.y.slice(0,3));
     document.getElementById('clear-sim-btn').style.display='block';
     if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
