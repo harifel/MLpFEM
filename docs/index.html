@@ -971,7 +971,9 @@ function rawDataToBlob(key) {
     rows = d.x.map((v,i)=>`${(v*(-1)).toFixed(6)}\t${d.y[i].toFixed(6)}`).join('\n');
   } else {
     // x = σ*(-1) back to positive kPa, y = ε*(-100) back to positive %
-	rows = d.y.map((v,i)=>`${(d.x[i]*(-100)).toFixed(6)}\t${(v*(-1)).toFixed(6)}`).join('\n');
+	// d.x = ε₁ (negative decimal), d.y = σ₁' (negative kPa)
+	// app.py expects col0 = σ₁' positive kPa, col1 = ε₁ positive %
+	rows = d.y.map((v,i)=>`${(v*(-1)).toFixed(6)}\t${(d.x[i]*(-100)).toFixed(6)}`).join('\n');
   }
   return new Blob([rows], {type:'text/plain'});
 }
