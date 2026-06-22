@@ -1211,9 +1211,9 @@ function gotSimFile(k, inp){
     if(k==='q') userSim.q={x:xs.map(v=>v*(1/100*(-1))), y:ys};
     if(k==='v') userSim.v={x:xs.map(v=>v*(1/100*(-1))), y:ys.map(v=>v*(-1/100))};
     if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
-    if(k==='o') userSim.o={
-  		x: xs,   // col0 = ε₁ (negative decimal) — already correct
-  		y: ys                        // sig1 kPa, already negative
+	if(k==='o') userSim.o={
+	  x: xs.map(v => v > 0 ? -v : v),  // ε₁ → negative decimal
+	  y: ys.map(v => v > 0 ? -v : v)   // σ₁' → negative kPa
 	};
     document.getElementById('clear-sim-btn').style.display='block';
     if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
