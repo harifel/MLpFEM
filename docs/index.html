@@ -625,6 +625,7 @@ async function loadKFSRawData(){
       p: {x:[...D.raw.p.x], y:[...D.raw.p.y]},
       o: {x:[...D.raw.o.y], y:[...D.raw.o.x]},
     };
+	console.log('CATCH rawData.o x[0..2]:', rawData.o.x.slice(0,3), 'y[0..2]:', rawData.o.y.slice(0,3));
   }
   // Set userInterp from the saved interpolated files (sklearn 1.2.2).
   // This is the EXACT same input the paper prediction used.
@@ -1213,7 +1214,10 @@ function gotSimFile(k, inp){
     if(k==='q') userSim.q={x:xs.map(v=>v*(1/100*(-1))), y:ys};
     if(k==='v') userSim.v={x:xs.map(v=>v*(1/100*(-1))), y:ys.map(v=>v*(-1/100))};
     if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
-	if(k==='o') userSim.o={ x: xs, y: ys };
+	if(k==='o') userSim.o={
+	  x: xs.map(v => v > 0 ? -v : v),  // force ε₁ negative
+	  y: ys.map(v => v > 0 ? -v : v)   // force σ₁' negative
+	};
     console.log('userSim.o x[0..2]:', userSim.o.x.slice(0,3), 'y[0..2]:', userSim.o.y.slice(0,3));
     document.getElementById('clear-sim-btn').style.display='block';
     if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
