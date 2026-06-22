@@ -1216,50 +1216,47 @@ function gotSimFile(k, inp){
     if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
 	// No conversion needed — already negative:
 	if(k==='o') {
-	  // Detect sign convention from uploaded file
-	  // Expected display: x = ε₁ (negative decimal), y = σ₁' (negative kPa)
-	  // PLAXIS exports: col0 = σ₁' positive kPa, col1 = ε₁ positive %
-	  // But user might upload already-negative decimals matching our convention
-	
+	  const maxAbsX = Math.max(...xs.map(v => Math.abs(v)));
+	  const maxAbsY = Math.max(...ys.map(v => Math.abs(v)));
 	  const firstNonZeroX = xs.find(v => v !== 0) ?? 0;
-	  const firstNonZeroY = ys.find(v => v !== 0) ?? 0;
 	
-	  const xIsLarge = Math.abs(firstNonZeroX) > 1;   // σ₁' kPa range (>1), ε₁ decimal (<1)
+	  // Use max values to determine scale — ε₁ max ~0.025, σ₁' max ~400 kPa
+	  const xIsLarge = maxAbsX > 1;   // col0 is σ₁' kPa
 	  const xIsPositive = firstNonZeroX > 0;
 	
 	  if (xIsLarge && xIsPositive) {
-	    // PLAXIS format: col0 = σ₁' positive kPa, col1 = ε₁ positive %
+	    // PLAXIS: col0 = σ₁' positive kPa, col1 = ε₁ positive %
 	    userSim.o = {
-	      x: ys.map(v => v / (-100)),  // ε₁ % → negative decimal
-	      y: xs.map(v => -v)            // σ₁' → negative kPa
+	      x: ys.map(v => v / (-100)),
+	      y: xs.map(v => -v)
 	    };
 	  } else if (xIsLarge && !xIsPositive) {
 	    // col0 = σ₁' negative kPa, col1 = ε₁ negative %
 	    userSim.o = {
-	      x: ys.map(v => v / 100),     // ε₁ negative % → negative decimal
-	      y: xs                          // σ₁' already negative kPa
+	      x: ys.map(v => v / 100),
+	      y: xs
 	    };
 	  } else if (!xIsLarge && xIsPositive) {
 	    // col0 = ε₁ positive decimal, col1 = σ₁' positive kPa
 	    userSim.o = {
-	      x: xs.map(v => -v),           // ε₁ → negative decimal
-	      y: ys.map(v => -v)            // σ₁' → negative kPa
+	      x: xs.map(v => -v),
+	      y: ys.map(v => -v)
 	    };
 	  } else {
 	    // col0 = ε₁ negative decimal, col1 = σ₁' negative kPa — already correct
 	    userSim.o = { x: xs, y: ys };
 	  }
-	  console.log('userSim.o detected convention — firstNonZeroX:', firstNonZeroX, 'firstNonZeroY:', firstNonZeroY);
+	  console.log('userSim.o maxAbsX:', maxAbsX, 'maxAbsY:', maxAbsY, 'firstNonZeroX:', firstNonZeroX);
 	  console.log('userSim.o x[0..2]:', userSim.o.x.slice(0,3), 'y[0..2]:', userSim.o.y.slice(0,3));
 	}
-    document.getElementById('clear-sim-btn').style.display='block';
-    if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
-      setView('sim',document.querySelectorAll('.cvb')[2]);
-      setStatus('ok','✓ ML simulation loaded. Showing overlay.');
-    } else { drawAll(); }
-  };
-  reader.readAsText(f);
-}
+	    document.getElementById('clear-sim-btn').style.display='block';
+	    if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
+	      setView('sim',document.querySelectorAll('.cvb')[2]);
+	      setStatus('ok','✓ ML simulation loaded. Showing overlay.');
+	    } else { drawAll(); }
+	  };
+	  reader.readAsText(f);
+	}
 
 function clearSim(){
   userSim=null;
