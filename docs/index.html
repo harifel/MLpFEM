@@ -1206,7 +1206,10 @@ function gotSimFile(k, inp){
     if(k==='q') userSim.q={x:xs.map(v=>v*(1/100*(-1))), y:ys};
     if(k==='v') userSim.v={x:xs.map(v=>v*(1/100*(-1))), y:ys.map(v=>v*(-1/100))};
     if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
-    if(k==='o') userSim.o={x:xs, y:ys};
+    if(k==='o') userSim.o={
+  		x: xs.map(v => v / 100),   // epsoed % → decimal, keeps sign
+  		y: ys                        // sig1 kPa, already negative
+	};
     document.getElementById('clear-sim-btn').style.display='block';
     if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
       setView('sim',document.querySelectorAll('.cvb')[2]);
