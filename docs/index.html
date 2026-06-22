@@ -615,12 +615,15 @@ async function loadKFSRawData(){
       })
     );
     rawData = Object.fromEntries(loaded);
+	if (rawData.o) {
+       rawData.o = { x: rawData.o.y, y: rawData.o.x };
+    }
   }catch{
     rawData = {
       q: {x:[...D.raw.q.x], y:[...D.raw.q.y]},
       v: {x:[...D.raw.v.x], y:[...D.raw.v.y]},
       p: {x:[...D.raw.p.x], y:[...D.raw.p.y]},
-      o: {x:[...D.raw.o.x], y:[...D.raw.o.y]},
+      o: {x:[...D.raw.o.y], y:[...D.raw.o.x]},
     };
   }
   // Set userInterp from the saved interpolated files (sklearn 1.2.2).
@@ -923,8 +926,8 @@ function gotFile(k,inp){
     });
     if (k === 'o') {
 	  rawData[k] = {
-	    x: xs.map(v => v > 0 ? -v : v),
-	    y: ys.map(v => v > 0 ? -v : v)
+	    x: ys.map(v => v > 0 ? -v : v),
+	    y: xs.map(v => v > 0 ? -v : v)
 	  };
 	} else {
 	  rawData[k] = { x: xs, y: ys };
@@ -968,7 +971,7 @@ function rawDataToBlob(key) {
     rows = d.x.map((v,i)=>`${(v*(-1)).toFixed(6)}\t${d.y[i].toFixed(6)}`).join('\n');
   } else {
     // x = σ*(-1) back to positive kPa, y = ε*(-100) back to positive %
-    rows = d.x.map((v,i)=>`${(v*(-1)).toFixed(6)}\t${(d.y[i]*(-100)).toFixed(6)}`).join('\n');
+	rows = d.y.map((v,i)=>`${(d.x[i]*(-100)).toFixed(6)}\t${(v*(-1)).toFixed(6)}`).join('\n');
   }
   return new Blob([rows], {type:'text/plain'});
 }
