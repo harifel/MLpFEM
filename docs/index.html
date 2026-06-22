@@ -888,7 +888,7 @@ async function runBrowserInterpolation() {
 
 	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
 	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
-	const so = evalOedoStats(rawData.o.x, rawData.o.y, doo);
+	const so = evalOedoStats(rawData.o.y, rawData.o.x, doo);
 
 	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
 	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
@@ -1010,7 +1010,7 @@ async function runAnalysis(){
 	};
 	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
 	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
-	const so = evalOedoStats(rawData.o.x, rawData.o.y, doo);
+	const so = evalOedoStats(rawData.o.y, rawData.o.x, doo);
 
 	setChartStat('q', `R²=${sq.r2.toFixed(4)}  RMSE=${sq.rmse.toFixed(1)} kPa  (deg=${dq})`);
 	setChartStat('v', `R²=${sv.r2.toFixed(4)}  RMSE=${sv.rmse.toFixed(5)}  (deg=${dv})`);
