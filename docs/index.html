@@ -771,7 +771,9 @@ function evalStats(xArr,yArr,deg){
   const yH=polyFit(xArr,yArr,xArr,deg); return r2rmse(yArr,yH);
 }
 function evalOedoStats(sigArr, epsArr, deg){
-  const minSigIdx=sigArr.indexOf(Math.min(...sigArr));
+  const minSigIdx = sigArr.reduce((best, v, i, a) =>
+   Math.abs(v) > Math.abs(a[best]) ? i : best, 0);
+  if (minSigIdx === 0 || minSigIdx >= sigArr.length - 1) return { r2: 1, rmse: 0 };
   const sigL=sigArr.slice(0,minSigIdx+1), epsL=epsArr.slice(0,minSigIdx+1);
   let sigU=sigArr.slice(minSigIdx), epsU=epsArr.slice(minSigIdx);
   const ci=sigU.findIndex(s=>s>-50);
@@ -878,7 +880,7 @@ async function runBrowserInterpolation() {
       q: data.curves.q_eps1,
       v: data.curves.epsvol,
       p: { x: data.curves.path.x.map(v => -v), y: data.curves.path.y },
-      o: data.curves.oedo
+      o: { x: data.curves.oedo.y, y: data.curves.oedo.x }
     };
 
 	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
@@ -919,7 +921,14 @@ function gotFile(k,inp){
       const p=l.trim().split(/\t|,|;|\s+/);
       if(p.length>=2){const x=parseFloat(p[0]),y=parseFloat(p[1]);if(!isNaN(x)&&!isNaN(y)){xs.push(x);ys.push(y);}}
     });
-    rawData[k]={x:xs,y:ys};
+    if (k === 'o') {
+	  rawData[k] = {
+	    x: xs.map(v => v > 0 ? -v : v),
+	    y: ys.map(v => v > 0 ? -v : v)
+	  };
+	} else {
+	  rawData[k] = { x: xs, y: ys };
+	}
 	if(rawData.q && rawData.v && rawData.p && rawData.o){
 		runBrowserInterpolation();
 		}
