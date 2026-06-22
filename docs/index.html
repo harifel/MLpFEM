@@ -408,7 +408,14 @@ table{width:100%;min-width:340px}
     </div>
     <div class="ctrl-card">
       <div class="card-hd">Upload ML simulation</div>
-      <div style="font-size:.62rem;color:var(--muted);margin-bottom:.45rem">Run PLAXIS script → export 4 files → upload here to overlay on lab data.</div>
+      <div style="font-size:.62rem;color:var(--mute);margin-bottom:.45rem;line-height:1.5">
+		  Run PLAXIS script → export 4 files → upload here to overlay on lab data.<br>
+		  <b>File format (tab-separated, no header):</b><br>
+		  q–ε₁: col0=-ε₁ (%), col1=q (kPa)<br>
+		  εvol–ε₁: col0=-ε₁ (%), col1=εvol (%)<br>
+		  p′–q: col0=p′ (kPa), col1=q (kPa)<br>
+		  σ₁′–ε₁: col0=-σ₁′ (kPa), col1=-ε₁ (%)
+		</div>
       <div class="ugrid">
         <div class="uc" id="uc-sq" onclick="document.getElementById('fi-sq').click()">
           <div class="ul"><span class="s">q</span> – <span class="s">ε</span><sub>1</sub></div>
@@ -1119,10 +1126,10 @@ function buildScript(p){
 'def save(n, a, b):',
 '    with open(f"{out}/{n}", "w") as f:',
 '        [f.write(f"{float(x):.6f}\\t{float(y):.6f}\\n") for x, y in zip(a, b)]',
-'save(<span class="st">"Triaxial test_q_eps1.txt"</span>, eps1,   q)',
-'save(<span class="st">"Triaxial test_epsvol.txt"</span>,  eps1,   epsvol)',
-'save(<span class="st">"Triaxial test_path.txt"</span>,    pmef,   q)',
-'save(<span class="st">"Oedometer.txt"</span>,             epsoed, sig1)',
+'save(<span class="st">"Triaxial test_q_eps1.txt"</span>, [e*(-100) for e in eps1], q)',
+'save(<span class="st">"Triaxial test_epsvol.txt"</span>,  [e*(-100) for e in eps1], [v*(-100) for v in epsvol])',
+'save(<span class="st">"Triaxial test_path.txt"</span>,    [abs(p) for p in pmef],   q)',
+'save(<span class="st">"Oedometer.txt"</span>,             [abs(s) for s in sig1],   [abs(e)*100 for e in epsoed])',
 'print(<span class="st">"Done — upload 4 files to Analysis tool + ML simulation"</span>)',
   ].join('\n');
 }
