@@ -885,7 +885,7 @@ async function runBrowserInterpolation() {
       q: data.curves.q_eps1,
       v: data.curves.epsvol,
       p: { x: data.curves.path.x.map(v => -v), y: data.curves.path.y },
-      o: { x: data.curves.oedo.y, y: data.curves.oedo.x }
+      o: { x: data.curves.oedo.x, y: data.curves.oedo.y }
     };
     console.log('userInterp.o x[0..2]:', userInterp.o.x.slice(0,3), 'y[0..2]:', userInterp.o.y.slice(0,3));
 
@@ -1011,7 +1011,7 @@ async function runAnalysis(){
 	  q:data.curves.q_eps1,
 	  v:data.curves.epsvol,
 	  p:{ x:data.curves.path.x.map(v => -v), y:data.curves.path.y },
-	  o: { x: data.curves.oedo.y, y: data.curves.oedo.x }
+	  o: { x: data.curves.oedo.x, y: data.curves.oedo.y }
 	};
 	const sq = evalStats(rawData.q.x, rawData.q.y, dq);
 	const sv = evalStats(rawData.v.x, rawData.v.y, dv);
@@ -1214,11 +1214,9 @@ function gotSimFile(k, inp){
     if(k==='q') userSim.q={x:xs.map(v=>v*(1/100*(-1))), y:ys};
     if(k==='v') userSim.v={x:xs.map(v=>v*(1/100*(-1))), y:ys.map(v=>v*(-1/100))};
     if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
-	if(k==='o') userSim.o={
-	  x: xs.map(v => v > 0 ? -v : v),  // force ε₁ negative
-	  y: ys.map(v => v > 0 ? -v : v)   // force σ₁' negative
-	};
-    console.log('userSim.o x[0..2]:', userSim.o.x.slice(0,3), 'y[0..2]:', userSim.o.y.slice(0,3));
+	// No conversion needed — already negative:
+	if(k==='o') userSim.o = { x: xs, y: ys };
+	console.log('userSim.o x[0..2]:', userSim.o.x.slice(0,3), 'y[0..2]:', userSim.o.y.slice(0,3));
     document.getElementById('clear-sim-btn').style.display='block';
     if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
       setView('sim',document.querySelectorAll('.cvb')[2]);
