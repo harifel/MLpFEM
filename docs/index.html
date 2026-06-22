@@ -1215,11 +1215,43 @@ function gotSimFile(k, inp){
     if(k==='v') userSim.v={x:xs.map(v=>v*(1/100*(-1))), y:ys.map(v=>v*(-1/100))};
     if(k==='p') userSim.p={x:xs.map(v=>v*(-1)),          y:ys};
 	// No conversion needed — already negative:
-	if(k==='o') userSim.o = {
-	  x: ys.map(v => v / (-100)),   // col1 = ε₁ % → negative decimal
-	  y: xs.map(v => -v)             // col0 = σ₁' kPa positive → negative kPa
-	};
-	console.log('userSim.o x[0..2]:', userSim.o.x.slice(0,3), 'y[0..2]:', userSim.o.y.slice(0,3));
+	if(k==='o') {
+	  // Detect sign convention from uploaded file
+	  // Expected display: x = ε₁ (negative decimal), y = σ₁' (negative kPa)
+	  // PLAXIS exports: col0 = σ₁' positive kPa, col1 = ε₁ positive %
+	  // But user might upload already-negative decimals matching our convention
+	
+	  const firstNonZeroX = xs.find(v => v !== 0) ?? 0;
+	  const firstNonZeroY = ys.find(v => v !== 0) ?? 0;
+	
+	  const xIsLarge = Math.abs(firstNonZeroX) > 1;   // σ₁' kPa range (>1), ε₁ decimal (<1)
+	  const xIsPositive = firstNonZeroX > 0;
+	
+	  if (xIsLarge && xIsPositive) {
+	    // PLAXIS format: col0 = σ₁' positive kPa, col1 = ε₁ positive %
+	    userSim.o = {
+	      x: ys.map(v => v / (-100)),  // ε₁ % → negative decimal
+	      y: xs.map(v => -v)            // σ₁' → negative kPa
+	    };
+	  } else if (xIsLarge && !xIsPositive) {
+	    // col0 = σ₁' negative kPa, col1 = ε₁ negative %
+	    userSim.o = {
+	      x: ys.map(v => v / 100),     // ε₁ negative % → negative decimal
+	      y: xs                          // σ₁' already negative kPa
+	    };
+	  } else if (!xIsLarge && xIsPositive) {
+	    // col0 = ε₁ positive decimal, col1 = σ₁' positive kPa
+	    userSim.o = {
+	      x: xs.map(v => -v),           // ε₁ → negative decimal
+	      y: ys.map(v => -v)            // σ₁' → negative kPa
+	    };
+	  } else {
+	    // col0 = ε₁ negative decimal, col1 = σ₁' negative kPa — already correct
+	    userSim.o = { x: xs, y: ys };
+	  }
+	  console.log('userSim.o detected convention — firstNonZeroX:', firstNonZeroX, 'firstNonZeroY:', firstNonZeroY);
+	  console.log('userSim.o x[0..2]:', userSim.o.x.slice(0,3), 'y[0..2]:', userSim.o.y.slice(0,3));
+	}
     document.getElementById('clear-sim-btn').style.display='block';
     if(userSim.q&&userSim.v&&userSim.p&&userSim.o){
       setView('sim',document.querySelectorAll('.cvb')[2]);
