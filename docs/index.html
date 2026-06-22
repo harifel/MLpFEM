@@ -719,9 +719,9 @@ function drawAll(){
 
   const simPx = activeSim?.p?.x ? activeSim.p.x.map(v => Math.abs(v)) : null;
 
-  function build(rx,ry,ix,iy,simX,simY){
+ function build(rx,ry,ix,iy,simX,simY){
     const s=[];
-    s.push(mkDS('#c8c5c0', ro.x, ro.y, 2, false, 3));
+    s.push(mkDS('#c8c5c0', rx, ry, 2, false, 3));  
     if(showInt) s.push(mkDS('#1a1a1a',ix,iy,0,false,2));
     if(showSim && simX && simY) s.push(mkDS('#3b5bdb',simX,simY,0,true,1));
     return s;
@@ -732,7 +732,7 @@ function drawAll(){
   C.p.data.datasets=build(rp.x,rp.y,ip.x,ip.y,simPx,activeSim?.p?.y); C.p.update('none');
   {
     const s=[];
-    s.push(mkDS('#c8c5c0',ro.y,ro.x,2,false,3));
+    s.push(mkDS('#c8c5c0', ro.x, ro.y, 2, false, 3));
     if(showInt) s.push(mkDS('#1a1a1a',io.x,io.y,0,false,2));
     if(showSim && activeSim?.o) s.push(mkDS('#3b5bdb',activeSim.o.x,activeSim.o.y,0,true,1));
     C.o.data.datasets=s; C.o.update('none');
